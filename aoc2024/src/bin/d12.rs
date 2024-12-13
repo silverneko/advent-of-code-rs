@@ -1,41 +1,36 @@
 use std::io::{BufRead, Cursor};
+use utils::{Direction, Grid, Point};
 
-fn parse_input(text: &str) -> Vec<Vec<u8>> {
-    Cursor::new(text.trim())
+fn parse_input(text: &str) -> Grid<u8> {
+    let grid: Vec<Vec<u8>> = Cursor::new(text.trim())
         .lines()
         .map(|line| line.unwrap().into())
-        .collect()
+        .collect();
+    grid.into()
 }
 
-/*
- * 123
- * 0.4
- * 765
- */
-fn neighbor((x, y): (usize, usize), d: usize, grid: &Vec<Vec<u8>>) -> Option<(usize, usize, u8)> {
-    static D: [(isize, isize); 8] = [
-        (0, -1),
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-        (0, 1),
-        (1, 1),
-        (1, 0),
-        (1, -1),
+fn corners(s: Point, grid: &Grid<u8>) -> u64 {
+    /*
+     * 123
+     * 0.4
+     * 765
+     */
+    let D: [Point; 8] = [
+        Direction::LEFT,
+        Direction::LEFT + Direction::UP,
+        Direction::UP,
+        Direction::UP + Direction::RIGHT,
+        Direction::RIGHT,
+        Direction::RIGHT + Direction::DOWN,
+        Direction::DOWN,
+        Direction::DOWN + Direction::LEFT,
     ];
-    let (dx, dy) = D[d];
-    let nx = x.checked_add_signed(dx)?;
-    let ny = y.checked_add_signed(dy)?;
-    Some((nx, ny, *grid.get(nx)?.get(ny)?))
-}
-
-fn corners(s: (usize, usize), grid: &Vec<Vec<u8>>) -> u64 {
     let mut cc = 0;
     for (na, da, nb) in [(0, 1, 2), (2, 3, 4), (4, 5, 6), (6, 7, 0)] {
-        let na = neighbor(s, na, grid).map(|t| t.2).unwrap_or(0);
-        let da = neighbor(s, da, grid).map(|t| t.2).unwrap_or(0);
-        let nb = neighbor(s, nb, grid).map(|t| t.2).unwrap_or(0);
-        let t = grid[s.0][s.1];
+        let na = grid.get(s + D[na]).copied().unwrap_or(0);
+        let da = grid.get(s + D[da]).copied().unwrap_or(0);
+        let nb = grid.get(s + D[nb]).copied().unwrap_or(0);
+        let t = grid[s];
         if t != na && t != nb {
             cc += 1;
         } else if t == na && t == nb && t != da {
@@ -45,26 +40,25 @@ fn corners(s: (usize, usize), grid: &Vec<Vec<u8>>) -> u64 {
     cc
 }
 
-fn dfs(
-    (x, y): (usize, usize),
-    grid: &Vec<Vec<u8>>,
-    visited: &mut Vec<Vec<bool>>,
-) -> (u64, u64, u64) {
-    visited[x][y] = true;
+fn dfs(s: Point, grid: &Grid<u8>, visited: &mut Grid<bool>) -> (u64, u64, u64) {
+    visited[s] = true;
     let mut area = 1;
     let mut peri = 0;
-    let mut side = corners((x, y), grid);
-    for d in [0, 2, 4, 6] {
-        if let Some((nx, ny, tt)) = neighbor((x, y), d, grid) {
-            if tt == grid[x][y] {
-                if !visited[nx][ny] {
-                    let (a, p, c) = dfs((nx, ny), grid, visited);
-                    area += a;
-                    peri += p;
-                    side += c;
-                }
-            } else {
-                peri += 1;
+    let mut side = corners(s, grid);
+    for d in [
+        Direction::UP,
+        Direction::DOWN,
+        Direction::RIGHT,
+        Direction::LEFT,
+    ] {
+        let ns = s + d;
+        let nt = grid.get(ns);
+        if nt.is_some() && *nt.unwrap() == grid[s] {
+            if !visited[ns] {
+                let (a, p, c) = dfs(ns, grid, visited);
+                area += a;
+                peri += p;
+                side += c;
             }
         } else {
             peri += 1;
@@ -73,18 +67,16 @@ fn dfs(
     (area, peri, side)
 }
 
-fn solve(grid: &Vec<Vec<u8>>) -> (u64, u64) {
-    let h = grid.len();
-    let w = grid.first().unwrap().len();
-    let mut visited: Vec<Vec<bool>> = vec![vec![false; w]; h];
+fn solve(grid: &Grid<u8>) -> (u64, u64) {
+    let mut visited: Grid<bool> = Grid::new(false, grid.h, grid.w);
     let mut sum1 = 0;
     let mut sum2 = 0;
-    for i in 0..h {
-        for j in 0..w {
-            if visited[i][j] {
+    for i in 0..grid.h {
+        for j in 0..grid.w {
+            if visited[(i, j)] {
                 continue;
             }
-            let (area, peri, side) = dfs((i, j), grid, &mut visited);
+            let (area, peri, side) = dfs((i, j).into(), grid, &mut visited);
             sum1 += area * peri;
             sum2 += area * side;
         }
