@@ -8,17 +8,15 @@ fn main() {
         .map(|line| line.map(|e| e.into()))
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
-    let h = grid.len();
-    let w = grid.first().unwrap().len();
-    let grid = Grid(grid);
+    let grid = Grid::from(grid);
 
     let mut ant: HashMap<u8, Vec<Point>> = HashMap::new();
     let mut ans1: HashSet<Point> = HashSet::new();
     let mut ans2: HashSet<Point> = HashSet::new();
 
-    for i in 0..h {
-        for j in 0..w {
-            match grid[i][j] {
+    for i in 0..grid.h {
+        for j in 0..grid.w {
+            match grid[(i, j)] {
                 b'.' => {}
                 a @ (b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9') => {
                     ant.entry(a).or_default().push(Point::from((i, j)));
@@ -59,12 +57,12 @@ fn main() {
     }
 
     println!();
-    for i in 0..h {
-        for j in 0..w {
+    for i in 0..grid.h {
+        for j in 0..grid.w {
             if ans2.contains(&Point::from((i, j))) {
                 print!("#");
             } else {
-                print!("{}", std::str::from_utf8(&[grid[i][j]]).unwrap());
+                print!("{}", std::str::from_utf8(&[grid[(i, j)]]).unwrap());
             }
         }
         println!();
