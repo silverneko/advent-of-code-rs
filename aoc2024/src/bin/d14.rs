@@ -60,8 +60,7 @@ fn print_tree(data: &TestCase, steps: usize) {
         .any(|(i, j)| {
             canvas[i..i + 3]
                 .iter()
-                .map(|c| c[j..j + 3].iter())
-                .flatten()
+                .flat_map(|c| c[j..j + 3].iter())
                 .all(|&e| e == '#')
         });
     if !found {

@@ -126,6 +126,18 @@ impl<T> Grid<T> {
     }
 }
 
+impl std::fmt::Display for Grid<u8> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for i in 0..self.h {
+            for j in 0..self.w {
+                write!(f, "{}", char::from_u32(self[(i, j)].into()).expect("ascii"))?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 impl<T, P: Into<Point>> std::ops::Index<P> for Grid<T> {
     type Output = T;
 
