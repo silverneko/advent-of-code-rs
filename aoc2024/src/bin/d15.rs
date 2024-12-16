@@ -24,13 +24,10 @@ fn parse_input<R: BufRead>(reader: R) -> TestCase {
             b'v' => Direction::DOWN,
             b'>' => Direction::RIGHT,
             b'<' => Direction::LEFT,
-            _ => panic!("unexpected direction: {b:?}"),
+            t => panic!("unexpected direction: {t:?}"),
         })
         .collect();
-    TestCase {
-        grid: grid,
-        moves: moves,
-    }
+    TestCase { grid, moves }
 }
 
 impl TestCase {
@@ -46,7 +43,7 @@ impl TestCase {
                         b'.' => [b'.', b'.'],
                         b'O' => [b'[', b']'],
                         b'@' => [b'@', b'.'],
-                        t @ _ => panic!("unexpected token: {t:?}"),
+                        t => panic!("unexpected token: {t:?}"),
                     })
                     .collect::<Vec<_>>()
             })
@@ -64,7 +61,7 @@ fn try_move(s: Point, d: Point, grid: &mut Grid<u8>) -> bool {
         b'O' => try_move(n, d, grid),
         b'[' => try_move(n + Point(0, 1), d, grid) && try_move(n, d, grid),
         b']' => try_move(n + Point(0, -1), d, grid) && try_move(n, d, grid),
-        t @ _ => panic!("unexpected token: {t:?}"),
+        t => panic!("unexpected token: {t:?}"),
     };
     if can_move {
         grid[n] = grid[s];
@@ -97,10 +94,7 @@ fn solve(data: TestCase) -> u64 {
 
     (0..grid.h)
         .cartesian_product(0..grid.w)
-        .filter(|&p| match grid[p] {
-            b'O' | b'[' => true,
-            _ => false,
-        })
+        .filter(|&p| matches!(grid[p], b'O' | b'['))
         .map(|(i, j)| (i * 100 + j) as u64)
         .sum()
 }

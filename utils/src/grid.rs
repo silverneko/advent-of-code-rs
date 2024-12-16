@@ -1,9 +1,13 @@
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Point(pub isize, pub isize);
 
 impl Point {
     pub const fn new(x: isize, y: isize) -> Self {
         Self(x, y)
+    }
+
+    pub const fn rotate(&self) -> Self {
+        Self(self.1, -self.0)
     }
 }
 
@@ -102,11 +106,7 @@ impl<T> From<Vec<Vec<T>>> for Grid<T> {
         let h = buf.len();
         let w = buf.first().map(|e| e.len()).unwrap_or(0);
         assert!(buf.iter().all(|e| e.len() == w));
-        Self {
-            h: h,
-            w: w,
-            buf: buf,
-        }
+        Self { h, w, buf }
     }
 }
 
