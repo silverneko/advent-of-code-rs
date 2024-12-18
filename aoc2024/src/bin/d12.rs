@@ -2,10 +2,8 @@ use std::io::{BufRead, Cursor};
 use utils::{Direction, Grid, Point};
 
 fn parse_input(text: &str) -> Grid<u8> {
-    let grid: Vec<Vec<u8>> = Cursor::new(text.trim())
-        .lines()
-        .map(|line| line.unwrap().into())
-        .collect();
+    let grid: Vec<Vec<u8>> =
+        Cursor::new(text.trim()).lines().map(|line| line.unwrap().into()).collect();
     grid.into()
 }
 
@@ -45,12 +43,7 @@ fn dfs(s: Point, grid: &Grid<u8>, visited: &mut Grid<bool>) -> (u64, u64, u64) {
     let mut area = 1;
     let mut peri = 0;
     let mut side = corners(s, grid);
-    for d in [
-        Direction::UP,
-        Direction::DOWN,
-        Direction::RIGHT,
-        Direction::LEFT,
-    ] {
+    for d in [Direction::UP, Direction::DOWN, Direction::RIGHT, Direction::LEFT] {
         let ns = s + d;
         let nt = grid.get(ns);
         if nt.is_some() && *nt.unwrap() == grid[s] {

@@ -36,21 +36,15 @@ fn bfs(grid: &Vec<Vec<u8>>, s: (usize, usize)) -> (u32, u32) {
         }
     }
     */
-    let f = grid
-        .iter()
-        .flatten()
-        .zip(visited.iter().flatten())
-        .filter(|(&t, &r)| t == b'9' && r > 0);
+    let f =
+        grid.iter().flatten().zip(visited.iter().flatten()).filter(|(&t, &r)| t == b'9' && r > 0);
     let cc = f.clone().count() as u32;
     let rating = f.fold(0, |acc, (_, &r)| acc + r);
     (cc, rating)
 }
 
 fn main() {
-    let grid: Vec<Vec<u8>> = std::io::stdin()
-        .lines()
-        .map(|line| line.unwrap().into())
-        .collect();
+    let grid: Vec<Vec<u8>> = std::io::stdin().lines().map(|line| line.unwrap().into()).collect();
     let h = grid.len();
     let w = grid.first().unwrap().len();
 

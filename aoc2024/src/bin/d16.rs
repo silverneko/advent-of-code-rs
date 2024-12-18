@@ -5,11 +5,7 @@ use std::io::{stdin, BufRead};
 use utils::{Direction, Grid, Point};
 
 fn parse_input(reader: impl BufRead) -> Grid<u8> {
-    reader
-        .lines()
-        .map(|e| e.unwrap().into())
-        .collect::<Vec<Vec<u8>>>()
-        .into()
+    reader.lines().map(|e| e.unwrap().into()).collect::<Vec<Vec<u8>>>().into()
 }
 
 // A node in our graph is a position (Point) plus an orientation (Point).
@@ -22,11 +18,7 @@ struct State(u32, Node, Option<Node>);
 
 fn solve(grid: &Grid<u8>) -> (u32, u32) {
     let s = Node(
-        (0..grid.h)
-            .cartesian_product(0..grid.w)
-            .find(|&p| grid[p] == b'S')
-            .unwrap()
-            .into(),
+        (0..grid.h).cartesian_product(0..grid.w).find(|&p| grid[p] == b'S').unwrap().into(),
         Direction::RIGHT,
     );
     // Priority queue for Dijkstra algorithm from S -> E.
@@ -67,24 +59,14 @@ fn solve(grid: &Grid<u8>) -> (u32, u32) {
             t => panic!("unexpected token: {:?}", char::from_u32(t.into())),
         }
         pq.push(Reverse(State(dist + 1, Node(p + d, d), Some(target))));
-        pq.push(Reverse(State(
-            dist + 1000,
-            Node(p, d.rotate()),
-            Some(target),
-        )));
-        pq.push(Reverse(State(
-            dist + 1000,
-            Node(p, d.rotate().rotate().rotate()),
-            Some(target),
-        )));
+        pq.push(Reverse(State(dist + 1000, Node(p, d.rotate()), Some(target))));
+        pq.push(Reverse(State(dist + 1000, Node(p, d.rotate().rotate().rotate()), Some(target))));
     }
 
     let mut area_set: HashSet<Point> = HashSet::new();
     while let Some(s) = bq.pop_front() {
         area_set.insert(s.0);
-        let Some(back) = backtrack.get_mut(&s) else {
-            unreachable!()
-        };
+        let Some(back) = backtrack.get_mut(&s) else { unreachable!() };
         for &pv in back.iter() {
             bq.push_back(pv);
         }

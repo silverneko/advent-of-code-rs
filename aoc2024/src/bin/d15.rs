@@ -74,11 +74,8 @@ fn solve(data: TestCase) -> u64 {
     let TestCase { mut grid, moves } = data;
     println!("Initial state:\n{grid}");
 
-    let mut s: Point = (0..grid.h)
-        .cartesian_product(0..grid.w)
-        .find(|&p| grid[p] == b'@')
-        .unwrap()
-        .into();
+    let mut s: Point =
+        (0..grid.h).cartesian_product(0..grid.w).find(|&p| grid[p] == b'@').unwrap().into();
 
     for &d in moves.iter() {
         let mut try_grid = grid.clone();
@@ -101,11 +98,7 @@ fn solve(data: TestCase) -> u64 {
 
 fn main() {
     let test_case = parse_input(stdin().lock());
-    println!(
-        "{:?},{:?}",
-        solve(test_case.clone()),
-        solve(test_case.upscale())
-    );
+    println!("{:?},{:?}", solve(test_case.clone()), solve(test_case.upscale()));
 }
 
 #[cfg(test)]

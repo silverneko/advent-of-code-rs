@@ -50,9 +50,7 @@ fn main() {
         for (&file_off, &FileExtent(fid, mut file_len)) in file_set.iter().rev() {
             for (&free_off, &FreeExtent(free_len)) in free_set.clone().range(..file_off) {
                 let moved_len = free_len.min(file_len);
-                assert!(moved_set
-                    .insert(free_off, FileExtent(fid, moved_len))
-                    .is_none());
+                assert!(moved_set.insert(free_off, FileExtent(fid, moved_len)).is_none());
                 free_set.remove(&free_off).unwrap();
                 if free_len > moved_len {
                     assert!(free_set
@@ -66,9 +64,7 @@ fn main() {
             }
 
             if file_len > 0 {
-                assert!(moved_set
-                    .insert(file_off, FileExtent(fid, file_len))
-                    .is_none());
+                assert!(moved_set.insert(file_off, FileExtent(fid, file_len)).is_none());
             }
         }
 
@@ -87,10 +83,7 @@ fn main() {
 
         for (&file_off, &file_extent) in file_set.iter().rev() {
             let file_len = file_extent.1;
-            match free_set
-                .range(..file_off)
-                .find(|(_, &FreeExtent(len))| len >= file_len)
-            {
+            match free_set.range(..file_off).find(|(_, &FreeExtent(len))| len >= file_len) {
                 Some((&free_off, &FreeExtent(free_len))) => {
                     assert!(moved_set.insert(free_off, file_extent).is_none());
                     free_set.remove(&free_off).unwrap();
