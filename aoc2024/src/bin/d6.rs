@@ -19,10 +19,7 @@ fn find_patrol_path(mut grid: Vec<Vec<u8>>) -> PatrolPath {
     loop {
         let (dx, dy) = DIRECTIONS[d];
         let (nx, ny) = (x as i32 + dx, y as i32 + dy);
-        let next_tile = (|| {
-            grid.get(usize::try_from(nx).ok()?)?
-                .get(usize::try_from(ny).ok()?)
-        })();
+        let next_tile = (|| grid.get(usize::try_from(nx).ok()?)?.get(usize::try_from(ny).ok()?))();
         match next_tile {
             None => {
                 grid[x][y] = d as u8;
@@ -53,14 +50,9 @@ fn find_patrol_path(mut grid: Vec<Vec<u8>>) -> PatrolPath {
 }
 
 fn main() {
-    let canvas: Vec<Vec<u8>> = std::io::stdin()
-        .lines()
-        .map(|line| line.unwrap().into())
-        .collect();
+    let canvas: Vec<Vec<u8>> = std::io::stdin().lines().map(|line| line.unwrap().into()).collect();
 
-    let PatrolPath::Area(ans1) = find_patrol_path(canvas.clone()) else {
-        panic!()
-    };
+    let PatrolPath::Area(ans1) = find_patrol_path(canvas.clone()) else { panic!() };
 
     let h = canvas.len();
     let w = canvas.first().unwrap().len();

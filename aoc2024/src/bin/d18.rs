@@ -39,12 +39,7 @@ impl TestCase {
         let mut dist: HashMap<Point, usize> = HashMap::from([(Point(0, 0), 0)]);
         let mut bq: VecDeque<Point> = VecDeque::from([Point(0, 0)]);
         while let Some(v) = bq.pop_front() {
-            for dv in [
-                Direction::UP,
-                Direction::DOWN,
-                Direction::RIGHT,
-                Direction::LEFT,
-            ] {
+            for dv in [Direction::UP, Direction::DOWN, Direction::RIGHT, Direction::LEFT] {
                 let n = v + dv;
                 if let Some(t) = self.get_block(n) {
                     if t >= limit && !dist.contains_key(&n) {
@@ -58,9 +53,7 @@ impl TestCase {
     }
 
     fn part2(&self) -> Point {
-        let n = (0..self.b.len())
-            .collect::<Vec<_>>()
-            .partition_point(|&i| self.solve(i).is_some());
+        let n = (0..self.b.len()).collect::<Vec<_>>().partition_point(|&i| self.solve(i).is_some());
         *self.b.iter().find(|(_, &t)| t == n - 1).unwrap().0
     }
 }

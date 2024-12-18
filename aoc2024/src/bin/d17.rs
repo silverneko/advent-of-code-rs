@@ -18,19 +18,9 @@ impl State {
         let reg_a = lines.next().unwrap().parse::<u64>().unwrap();
         let reg_b = lines.next().unwrap().parse::<u64>().unwrap();
         let reg_c = lines.next().unwrap().parse::<u64>().unwrap();
-        let code: Vec<usize> = lines
-            .next()
-            .unwrap()
-            .split(',')
-            .map(|e| e.parse().unwrap())
-            .collect();
-        Self {
-            pos: 0,
-            reg_a,
-            reg_b,
-            reg_c,
-            code,
-        }
+        let code: Vec<usize> =
+            lines.next().unwrap().split(',').map(|e| e.parse().unwrap()).collect();
+        Self { pos: 0, reg_a, reg_b, reg_c, code }
     }
 
     fn opcode(&self) -> Option<usize> {
@@ -121,10 +111,7 @@ fn main() {
     println!("{}", solve(state.clone()).iter().join(","));
 
     let reg_a = dfs(&state, 0).unwrap();
-    let output = solve(State {
-        reg_a,
-        ..state.clone()
-    });
+    let output = solve(State { reg_a, ..state.clone() });
     println!("{reg_a} {output:?}");
 }
 
@@ -144,9 +131,6 @@ Program: 0,1,5,4,3,0
 "
         .trim();
         let reader = Cursor::new(input);
-        assert_eq!(
-            solve(State::parse(reader)).iter().join(","),
-            "4,6,3,5,6,3,5,2,1,0"
-        );
+        assert_eq!(solve(State::parse(reader)).iter().join(","), "4,6,3,5,6,3,5,2,1,0");
     }
 }

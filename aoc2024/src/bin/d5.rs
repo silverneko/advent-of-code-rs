@@ -24,12 +24,7 @@ fn main() {
             .expect("two numbers");
         rules.insert((a, b));
         */
-        rules.insert(
-            line.split("|")
-                .map(|s| s.parse::<i32>().unwrap())
-                .collect_tuple()
-                .unwrap(),
-        );
+        rules.insert(line.split("|").map(|s| s.parse::<i32>().unwrap()).collect_tuple().unwrap());
     }
 
     let cmp = |a: &i32, b: &i32| {

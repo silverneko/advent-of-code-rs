@@ -27,9 +27,7 @@ fn check_x_max(canvas: &Vec<Vec<u8>>, i: usize, j: usize) -> Option<u32> {
         .map(|d| {
             d.into_iter()
                 .map(|(di, dj)| {
-                    canvas
-                        .get(i.checked_add_signed(di)?)?
-                        .get(j.checked_add_signed(dj)?)
+                    canvas.get(i.checked_add_signed(di)?)?.get(j.checked_add_signed(dj)?)
                 })
                 .filter_map(|e| e.copied())
                 .collect::<Vec<u8>>()
@@ -51,10 +49,7 @@ fn main() -> Result<()> {
     let mut count = 0;
     let mut count2 = 0;
 
-    let canvas: Vec<Vec<u8>> = std::io::stdin()
-        .lines()
-        .map(|line| line.unwrap().into())
-        .collect();
+    let canvas: Vec<Vec<u8>> = std::io::stdin().lines().map(|line| line.unwrap().into()).collect();
 
     let h = canvas.len();
     let w = canvas.first().unwrap().len();

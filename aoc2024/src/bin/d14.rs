@@ -57,12 +57,7 @@ fn print_tree(data: &TestCase, steps: usize) {
 
     let found = (0..h as usize - 2)
         .cartesian_product(0..w as usize - 2)
-        .any(|(i, j)| {
-            canvas[i..i + 3]
-                .iter()
-                .flat_map(|c| c[j..j + 3].iter())
-                .all(|&e| e == '#')
-        });
+        .any(|(i, j)| canvas[i..i + 3].iter().flat_map(|c| c[j..j + 3].iter()).all(|&e| e == '#'));
     if !found {
         return;
     }
@@ -76,11 +71,7 @@ fn print_tree(data: &TestCase, steps: usize) {
 }
 
 fn main() {
-    let test_case = TestCase {
-        w: 101,
-        h: 103,
-        robots: parse_input(stdin().lock()),
-    };
+    let test_case = TestCase { w: 101, h: 103, robots: parse_input(stdin().lock()) };
     println!("{:?}", solve(&test_case));
 
     for n in 0..101 * 103 {
@@ -109,11 +100,7 @@ p=2,4 v=2,-3
 p=9,5 v=-3,-3
 ";
         let input_reader = Cursor::new(input.trim());
-        let test_case = TestCase {
-            w: 11,
-            h: 7,
-            robots: parse_input(input_reader),
-        };
+        let test_case = TestCase { w: 11, h: 7, robots: parse_input(input_reader) };
         assert_eq!(solve(&test_case), 12);
     }
 }
