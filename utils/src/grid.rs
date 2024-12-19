@@ -11,15 +11,15 @@ impl Point {
     }
 }
 
-impl From<(isize, isize)> for Point {
-    fn from((x, y): (isize, isize)) -> Self {
-        Self::new(x, y)
-    }
-}
-
-impl From<(usize, usize)> for Point {
-    fn from((x, y): (usize, usize)) -> Self {
-        Self::new(x as isize, y as isize)
+impl<T1, T2, E1, E2> From<(T1, T2)> for Point
+where
+    T1: TryInto<isize, Error = E1>,
+    T2: TryInto<isize, Error = E2>,
+    E1: std::fmt::Debug,
+    E2: std::fmt::Debug,
+{
+    fn from((x, y): (T1, T2)) -> Self {
+        Self::new(x.try_into().unwrap(), y.try_into().unwrap())
     }
 }
 
