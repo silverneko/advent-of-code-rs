@@ -1,9 +1,20 @@
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Point(pub isize, pub isize);
 
+pub type Direction = Point;
+
 impl Point {
-    pub const fn new(x: isize, y: isize) -> Self {
-        Self(x, y)
+    pub const UP: Point = Point(-1, 0);
+    pub const DOWN: Point = Point(1, 0);
+    pub const RIGHT: Point = Point(0, 1);
+    pub const LEFT: Point = Point(0, -1);
+
+    pub fn new<T1, T2>(x: T1, y: T2) -> Self
+    where
+        T1: Into<isize>,
+        T2: Into<isize>,
+    {
+        Self(x.into(), y.into())
     }
 
     pub const fn rotate(&self) -> Self {
@@ -21,15 +32,6 @@ where
     fn from((x, y): (T1, T2)) -> Self {
         Self::new(x.try_into().unwrap(), y.try_into().unwrap())
     }
-}
-
-pub enum Direction {}
-
-impl Direction {
-    pub const UP: Point = Point(-1, 0);
-    pub const DOWN: Point = Point(1, 0);
-    pub const RIGHT: Point = Point(0, 1);
-    pub const LEFT: Point = Point(0, -1);
 }
 
 macro_rules! impl_add {
