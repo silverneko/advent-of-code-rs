@@ -24,23 +24,9 @@ fn bfs(grid: &Vec<Vec<u8>>, s: (usize, usize)) -> (u32, u32) {
             }
         }
     }
-    /*
-    let mut cc = 0;
-    let mut rating = 0;
-    for i in 0..h {
-        for j in 0..w {
-            if grid[i][j] == b'9' && visited[i][j] > 0 {
-                cc += 1;
-                rating += visited[i][j];
-            }
-        }
-    }
-    */
-    let f =
-        grid.iter().flatten().zip(visited.iter().flatten()).filter(|(&t, &r)| t == b'9' && r > 0);
-    let cc = f.clone().count() as u32;
-    let rating = f.fold(0, |acc, (_, &r)| acc + r);
-    (cc, rating)
+    std::iter::zip(grid.iter().flatten(), visited.iter().flatten())
+        .filter(|(&t, &r)| t == b'9' && r > 0)
+        .fold((0, 0), |acc, (_, &r)| (acc.0 + 1, acc.1 + r))
 }
 
 fn main() {
