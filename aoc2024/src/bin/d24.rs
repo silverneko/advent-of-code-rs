@@ -1,9 +1,9 @@
-use itertools::{iproduct, Itertools};
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::io::{stdin, BufRead};
 use std::ops::{BitAnd, BitOr, BitXor};
 use std::str::{from_utf8, FromStr};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 
 #[allow(clippy::upper_case_acronyms)]
@@ -175,23 +175,21 @@ impl TestCase {
     }
 
     fn find_best_swap(&self) -> (usize, Wire, Wire) {
-        let wires = Arc::new(Vec::from_iter(self.gates.keys().copied()));
-        let work_queue: Vec<_> = {
-            let l = self.gates.len();
-            iproduct!(0..l, 0..l).filter(|(i, j)| i < j).collect()
-        };
+        let work_queue: Vec<(Wire, Wire)> =
+            self.gates.keys().copied().tuple_combinations().collect();
         let results = Arc::new(Mutex::new(Vec::with_capacity(work_queue.len())));
         let work_queue = Arc::new(Mutex::new(work_queue));
 
+        static MAX_JOBS: OnceLock<usize> = OnceLock::new();
+        let max_jobs =
+            *MAX_JOBS.get_or_init(|| dbg!(thread::available_parallelism().unwrap().into()));
         let mut thread_handlers = Vec::new();
-        for _ in 0..70 {
+        for _ in 0..max_jobs {
             let work_queue = Arc::clone(&work_queue);
             let results = Arc::clone(&results);
-            let wires = Arc::clone(&wires);
             let mut data = self.clone();
             thread_handlers.push(thread::spawn(move || loop {
-                let Some((i, j)) = work_queue.lock().unwrap().pop() else { break };
-                let (w1, w2) = (wires[i], wires[j]);
+                let Some((w1, w2)) = work_queue.lock().unwrap().pop() else { break };
                 data.swap(&w1, &w2);
                 let s = data.score();
                 data.swap(&w1, &w2);
