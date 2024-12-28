@@ -60,7 +60,7 @@ fn solve(grid: &Grid<u8>) -> (u32, u32) {
         }
         pq.push(Reverse(State(dist + 1, Node(p + d, d), Some(target))));
         pq.push(Reverse(State(dist + 1000, Node(p, d.rotate()), Some(target))));
-        pq.push(Reverse(State(dist + 1000, Node(p, d.rotate().rotate().rotate()), Some(target))));
+        pq.push(Reverse(State(dist + 1000, Node(p, d.counter_rotate()), Some(target))));
     }
 
     let mut area_set: HashSet<Point> = HashSet::new();

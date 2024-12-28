@@ -8,7 +8,7 @@ fn bfs(grid: &Grid<char>, st: Point) -> Grid<usize> {
     let mut dist: Grid<usize> = Grid::new(usize::MAX, grid.h, grid.w);
     dist[st] = 0;
     while let Some(v) = bq.pop_front() {
-        for dv in [Point::UP, Point::DOWN, Point::RIGHT, Point::LEFT] {
+        for dv in Point::cardinals() {
             let n = v + dv;
             if matches!(grid.get(n), Some('.' | 'S' | 'E')) && dist[n] > dist[v].saturating_add(1) {
                 dist[n] = dist[v] + 1;

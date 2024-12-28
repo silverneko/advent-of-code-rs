@@ -17,8 +17,16 @@ impl Point {
         Self(x.into(), y.into())
     }
 
+    pub const fn cardinals() -> [Self; 4] {
+        [Self::UP, Self::RIGHT, Self::DOWN, Self::LEFT]
+    }
+
     pub const fn rotate(&self) -> Self {
         Self(self.1, -self.0)
+    }
+
+    pub const fn counter_rotate(&self) -> Self {
+        self.rotate().rotate().rotate()
     }
 }
 

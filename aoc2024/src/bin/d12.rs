@@ -2,17 +2,13 @@ use itertools::Itertools;
 use std::io::{stdin, BufRead};
 use utils::{Direction, Grid, Point};
 
-const fn cardinal_directions() -> [Direction; 4] {
-    [Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT]
-}
-
 fn parse_input(reader: impl BufRead) -> Grid<u8> {
     reader.lines().map(|line| line.unwrap().into()).collect::<Vec<_>>().into()
 }
 
 fn corners(s: Point, grid: &Grid<u8>) -> usize {
     let t = grid[s];
-    cardinal_directions()
+    Direction::cardinals()
         .into_iter()
         .circular_tuple_windows()
         .filter(|(a, b)| {
@@ -31,7 +27,7 @@ fn dfs(s: Point, grid: &Grid<u8>, visited: &mut Grid<bool>) -> (usize, usize, us
     let mut area = 1;
     let mut peri = 0;
     let mut side = corners(s, grid);
-    for d in cardinal_directions() {
+    for d in Direction::cardinals() {
         let ns = s + d;
         if grid.get(ns).copied().unwrap_or_default() == grid[s] {
             if !visited[ns] {

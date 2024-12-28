@@ -39,7 +39,7 @@ impl TestCase {
         let mut dist: HashMap<Point, usize> = HashMap::from([(Point(0, 0), 0)]);
         let mut bq: VecDeque<Point> = VecDeque::from([Point(0, 0)]);
         while let Some(v) = bq.pop_front() {
-            for dv in [Direction::UP, Direction::DOWN, Direction::RIGHT, Direction::LEFT] {
+            for dv in Direction::cardinals() {
                 let n = v + dv;
                 if let Some(t) = self.get_block(n) {
                     if t >= limit && !dist.contains_key(&n) {
