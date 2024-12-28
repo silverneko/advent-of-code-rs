@@ -1,22 +1,21 @@
-use std::io;
+use itertools::Itertools;
 
 fn main() {
-    let mut list_a: Vec<i32> = Vec::new();
-    let mut list_b: Vec<i32> = Vec::new();
-    for line in io::stdin().lines() {
-        let line = line.unwrap();
-        let mut words = line.split_ascii_whitespace();
-        list_a.push(words.next().unwrap().parse().unwrap());
-        list_b.push(words.next().unwrap().parse().unwrap());
-    }
+    let (mut list_a, mut list_b): (Vec<i32>, Vec<i32>) = std::io::stdin()
+        .lines()
+        .map(|e| {
+            e.unwrap()
+                .split_whitespace()
+                .map(|s| s.parse::<i32>().unwrap())
+                .collect_tuple()
+                .unwrap()
+        })
+        .unzip();
     list_a.sort();
     list_b.sort();
+    println!("{}", list_a.iter().zip(list_b.iter()).map(|(a, b)| (a - b).abs()).sum::<i32>());
+
     let mut diff = 0;
-    /*
-    for (a, b) in list_a.iter().zip(list_b) {
-        diff += (a - b).abs();
-    }
-    */
     let mut i = 0;
     let mut j = 0;
 
