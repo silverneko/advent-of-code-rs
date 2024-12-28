@@ -1,73 +1,32 @@
-use anyhow::{Context, Result};
+use itertools::iproduct;
+use utils::{Grid, Point};
 
-fn check_xmas(canvas: &Vec<Vec<u8>>, i: usize, j: usize, di: isize, dj: isize) -> Option<u32> {
-    if "XMAS"
-        .bytes()
-        .enumerate()
-        .map(|(idx, b)| {
-            Some(
-                *canvas
-                    .get(i.checked_add_signed(idx as isize * di)?)?
-                    .get(j.checked_add_signed(idx as isize * dj)?)?
-                    == b,
-            )
+fn count_xmas(grid: &Grid<char>, p: Point) -> usize {
+    iproduct!(-1..=1, -1..=1)
+        .map(Point::from)
+        .filter(|d| {
+            "XMAS".chars().enumerate().all(|(idx, c)| grid.get(p + d * idx as isize) == Some(&c))
         })
-        .all(|e| e == Some(true))
-    {
-        Some(1)
-    } else {
-        None
-    }
+        .count()
 }
 
-fn check_x_max(canvas: &Vec<Vec<u8>>, i: usize, j: usize) -> Option<u32> {
-    let diagonals = [[(-1, -1), (0, 0), (1, 1)], [(-1, 1), (0, 0), (1, -1)]];
-    if diagonals
+fn count_x_mas(grid: &Grid<char>, p: Point) -> usize {
+    [[Point(-1, -1), Point(0, 0), Point(1, 1)], [Point(-1, 1), Point(0, 0), Point(1, -1)]]
         .into_iter()
-        .map(|d| {
-            d.into_iter()
-                .map(|(di, dj)| {
-                    canvas.get(i.checked_add_signed(di)?)?.get(j.checked_add_signed(dj)?)
-                })
-                .filter_map(|e| e.copied())
-                .collect::<Vec<u8>>()
-        })
+        .map(|d| d.into_iter().filter_map(|dv| grid.get(p + dv).copied()).collect::<String>())
         // For each of the two diagonals, have to be either "MAS" or its reverse.
-        .all(|d| {
-            [&d, &d.iter().rev().copied().collect::<Vec<_>>()]
-                .iter()
-                .any(|e| e == &"SAM".as_bytes())
-        })
-    {
-        Some(1)
-    } else {
-        None
-    }
+        .all(|d| matches!(d.as_str(), "MAS" | "SAM")) as usize
 }
 
-fn main() -> Result<()> {
-    let mut count = 0;
-    let mut count2 = 0;
+fn main() {
+    let grid: Grid<char> = std::io::stdin()
+        .lines()
+        .map(|line| line.unwrap().chars().collect())
+        .collect::<Vec<_>>()
+        .into();
 
-    let canvas: Vec<Vec<u8>> = std::io::stdin().lines().map(|line| line.unwrap().into()).collect();
+    let xmas: usize = iproduct!(0..grid.h, 0..grid.w).map(|p| count_xmas(&grid, p.into())).sum();
+    let x_mas: usize = iproduct!(0..grid.h, 0..grid.w).map(|p| count_x_mas(&grid, p.into())).sum();
 
-    let h = canvas.len();
-    let w = canvas.first().unwrap().len();
-    for i in 0..h {
-        for j in 0..w {
-            for di in -1..=1 {
-                for dj in -1..=1 {
-                    if let Some(n) = check_xmas(&canvas, i, j, di, dj) {
-                        count += n;
-                    }
-                }
-            }
-            if let Some(n) = check_x_max(&canvas, i, j) {
-                count2 += n;
-            }
-        }
-    }
-
-    println!("{count},{count2}");
-    Ok(())
+    println!("{xmas},{x_mas}");
 }
