@@ -59,8 +59,8 @@ fn try_move(s: Point, d: Point, grid: &mut Grid<u8>) -> bool {
         b'#' => false,
         b'.' => true,
         b'O' => try_move(n, d, grid),
-        b'[' => try_move(n + Point(0, 1), d, grid) && try_move(n, d, grid),
-        b']' => try_move(n + Point(0, -1), d, grid) && try_move(n, d, grid),
+        b'[' => try_move(n + Direction::RIGHT, d, grid) && try_move(n, d, grid),
+        b']' => try_move(n + Direction::LEFT, d, grid) && try_move(n, d, grid),
         t => panic!("unexpected token: {t:?}"),
     };
     if can_move {
@@ -88,6 +88,7 @@ fn solve(data: TestCase) -> u64 {
             println!("Move {d:?}:\n{grid}");
         }
     }
+    println!("End state:\n{grid}");
 
     (0..grid.h)
         .cartesian_product(0..grid.w)
