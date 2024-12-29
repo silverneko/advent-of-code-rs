@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use itertools::{iproduct, Itertools};
 use std::io::{stdin, BufRead};
 use utils::{Direction, Grid, Point};
 
@@ -23,41 +23,27 @@ fn corners(s: Point, grid: &Grid<u8>) -> usize {
 }
 
 fn dfs(s: Point, grid: &Grid<u8>, visited: &mut Grid<bool>) -> (usize, usize, usize) {
-    visited[s] = true;
-    let mut area = 1;
-    let mut peri = 0;
-    let mut side = corners(s, grid);
-    for d in Direction::cardinals() {
-        let ns = s + d;
-        if grid.get(ns).copied().unwrap_or_default() == grid[s] {
-            if !visited[ns] {
-                let (a, p, c) = dfs(ns, grid, visited);
-                area += a;
-                peri += p;
-                side += c;
-            }
-        } else {
-            peri += 1;
-        }
+    if visited[s] {
+        return (0, 0, 0);
     }
-    (area, peri, side)
+    visited[s] = true;
+    Direction::cardinals().into_iter().fold((1, 0, corners(s, grid)), |(area, peri, side), d| {
+        let ns = s + d;
+        if grid.get(ns).copied() == Some(grid[s]) {
+            let (a, p, c) = dfs(ns, grid, visited);
+            (area + a, peri + p, side + c)
+        } else {
+            (area, peri + 1, side)
+        }
+    })
 }
 
 fn solve(grid: &Grid<u8>) -> (usize, usize) {
     let mut visited: Grid<bool> = Grid::new(false, grid.h, grid.w);
-    let mut sum1 = 0;
-    let mut sum2 = 0;
-    for i in 0..grid.h {
-        for j in 0..grid.w {
-            if visited[(i, j)] {
-                continue;
-            }
-            let (area, peri, side) = dfs((i, j).into(), grid, &mut visited);
-            sum1 += area * peri;
-            sum2 += area * side;
-        }
-    }
-    (sum1, sum2)
+    iproduct!(0..grid.h, 0..grid.w).fold((0, 0), |(sum1, sum2), p| {
+        let (area, peri, side) = dfs(p.into(), grid, &mut visited);
+        (sum1 + area * peri, sum2 + area * side)
+    })
 }
 
 fn main() {
