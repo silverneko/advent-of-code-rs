@@ -1,11 +1,8 @@
 [package]
-name = "aoc2024"
+name = "aoc2018"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "utils"
-
 [dependencies]
+anyhow = "1.0.95"
 itertools = "0.13.0"
-regex = "1.11.1"
