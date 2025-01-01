@@ -70,10 +70,8 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
-    fn get_input() -> &'static str {
-        r"
+    const SAMPLE_INPUT: &str = r"
 ###############
 #...#...#.....#
 #.#.#.#.#.###.#
@@ -90,13 +88,12 @@ mod tests {
 #...#...#...###
 ###############
 "
-        .trim()
-    }
+    .trim_ascii();
 
     #[test]
     fn test_part1() {
         assert_eq!(
-            TestCase::parse(Cursor::new(get_input())).solve(2),
+            TestCase::parse(SAMPLE_INPUT.as_bytes()).solve(2),
             HashMap::from([
                 (2, 14),
                 (4, 14),
@@ -115,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        let data = TestCase::parse(Cursor::new(get_input()));
+        let data = TestCase::parse(SAMPLE_INPUT.as_bytes());
         assert_eq!(
             HashMap::from_iter(data.solve(20).into_iter().filter(|&(d, _)| d >= 50)),
             HashMap::from([
