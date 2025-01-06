@@ -1,81 +1,105 @@
-use itertools::Itertools;
+use itertools::iproduct;
 use regex::Regex;
-use std::io::{stdin, BufRead, Cursor};
-
-struct Robot((i64, i64), (i64, i64));
+use std::io::{stdin, BufRead};
+use utils::{Direction, Grid, Point};
 
 struct TestCase {
-    w: i64,
-    h: i64,
-    robots: Vec<Robot>,
+    h: usize,
+    w: usize,
+    robots: Vec<(Point, Direction)>,
 }
 
-fn parse_input<R: BufRead>(reader: R) -> Vec<Robot> {
-    let parse_re = Regex::new(r"p=(\d+),(\d+) v=(-?\d+),(-?\d+)").unwrap();
-    reader
-        .lines()
-        .map(|line| {
-            let line = line.unwrap();
-            let cap = parse_re.captures(&line).unwrap();
-            let parsed = cap
-                .iter()
-                .skip(1)
-                .map(|e| e.unwrap().as_str().parse().unwrap())
-                .collect::<Vec<_>>();
-            Robot((parsed[0], parsed[1]), (parsed[2], parsed[3]))
+impl TestCase {
+    fn parse(h: usize, w: usize, reader: impl BufRead) -> Self {
+        let parse_re = Regex::new(r"p=(\d+),(\d+) v=(-?\d+),(-?\d+)").unwrap();
+        let robots = reader
+            .lines()
+            .map(|line| {
+                let line = line.unwrap();
+                let cap = parse_re.captures(&line).unwrap();
+                let parsed = cap
+                    .iter()
+                    .skip(1)
+                    .map(|e| e.unwrap().as_str().parse().unwrap())
+                    .collect::<Vec<isize>>();
+                ((parsed[0], parsed[1]).into(), (parsed[2], parsed[3]).into())
+            })
+            .collect();
+        Self { h, w, robots }
+    }
+
+    fn step(&self, (p, v): (Point, Direction), t: isize) -> Point {
+        let q = p + v * t;
+        (q.0.rem_euclid(self.w as isize), q.1.rem_euclid(self.h as isize)).into()
+    }
+
+    fn solve(&self) -> u64 {
+        let (h, w) = (self.h as isize, self.w as isize);
+        self.robots
+            .iter()
+            .fold([0; 4], |mut quad, &robot| {
+                let Point(x, y) = self.step(robot, 100);
+                quad[0] += if x < w / 2 && y < h / 2 { 1 } else { 0 };
+                quad[1] += if x < w / 2 && y > h / 2 { 1 } else { 0 };
+                quad[2] += if x > w / 2 && y < h / 2 { 1 } else { 0 };
+                quad[3] += if x > w / 2 && y > h / 2 { 1 } else { 0 };
+                quad
+            })
+            .into_iter()
+            .product()
+    }
+
+    fn draw(&self, t: isize) -> Grid<char> {
+        let mut canvas = Grid::new(' ', self.h, self.w);
+        for &robot in self.robots.iter() {
+            let Point(x, y) = self.step(robot, t);
+            canvas[(y, x)] = '#';
+        }
+        canvas
+    }
+}
+
+fn entropy(img: &Grid<char>) -> f64 {
+    let hist: [usize; 1 << 4] = iproduct!(0..img.h - 1, 0..img.w - 1)
+        .map(|(x, y)| {
+            iproduct!(x..x + 2, y..y + 2).fold(0, |acc, ij| (img[ij] == '#') as usize | acc << 1)
         })
-        .collect()
+        .fold([0; 1 << 4], |mut hist, x| {
+            hist[x] += 1;
+            hist
+        });
+    let total = hist.iter().sum::<usize>() as f64;
+    let pdf = hist.into_iter().filter(|&v| v > 0).map(|v| v as f64 / total);
+    pdf.map(|p| -p * p.log2()).sum()
 }
 
-fn solve(data: &TestCase) -> u64 {
-    let &TestCase { w, h, ref robots } = data;
-    let mut q: [u64; 4] = [0; 4];
-    for &Robot(p, v) in robots.iter() {
-        let (p1, p2) = p;
-        let (v1, v2) = v;
-        let x = (p1 + v1 * 100).rem_euclid(w);
-        let y = (p2 + v2 * 100).rem_euclid(h);
-        q[0] += if x < w / 2 && y < h / 2 { 1 } else { 0 };
-        q[1] += if x < w / 2 && y > h / 2 { 1 } else { 0 };
-        q[2] += if x > w / 2 && y < h / 2 { 1 } else { 0 };
-        q[3] += if x > w / 2 && y > h / 2 { 1 } else { 0 };
-    }
-    q.iter().product()
-}
-
-fn print_tree(data: &TestCase, steps: usize) {
-    let steps = steps as i64;
-    let &TestCase { w, h, ref robots } = data;
-    let mut canvas = vec![vec![' '; w as usize]; h as usize];
-    for &Robot(p, v) in robots.iter() {
-        let (p1, p2) = p;
-        let (v1, v2) = v;
-        let x = (p1 + v1 * steps).rem_euclid(w);
-        let y = (p2 + v2 * steps).rem_euclid(h);
-        canvas[y as usize][x as usize] = '#';
-    }
-
-    let found = (0..h as usize - 2)
-        .cartesian_product(0..w as usize - 2)
-        .any(|(i, j)| canvas[i..i + 3].iter().flat_map(|c| c[j..j + 3].iter()).all(|&e| e == '#'));
-    if !found {
-        return;
-    }
-    println!("Step {steps}:");
-    for row in canvas.iter() {
-        for col in row.iter() {
-            print!("{col}");
+fn print_preview(img: &Grid<char>) {
+    for x in (0..img.h).step_by(4) {
+        for y in (0..img.w).step_by(4) {
+            let s = iproduct!(x..x + 4, y..y + 4).filter(|&ij| img.get(ij) == Some(&'#')).count();
+            let t = match s {
+                0..=1 => ' ',
+                2 => '.',
+                3.. => '#',
+            };
+            print!("{t}");
         }
         println!();
     }
 }
 
 fn main() {
-    let test_case = TestCase { w: 101, h: 103, robots: parse_input(stdin().lock()) };
-    println!("{:?}", solve(&test_case));
-
-    for n in 0..101 * 103 {
-        print_tree(&test_case, n);
+    let test_case = TestCase::parse(103, 101, stdin().lock());
+    println!("Part1: {}", test_case.solve());
+    let mut min_e = f64::MAX;
+    for t in 0..101 * 103 {
+        let img = test_case.draw(t);
+        let e = entropy(&img);
+        if min_e > e {
+            min_e = e;
+            println!("Step {t}, entropy {e:.8}");
+            print_preview(&img);
+        }
     }
 }
 
@@ -98,9 +122,8 @@ p=9,3 v=2,3
 p=7,3 v=-1,2
 p=2,4 v=2,-3
 p=9,5 v=-3,-3
-";
-        let input_reader = Cursor::new(input.trim());
-        let test_case = TestCase { w: 11, h: 7, robots: parse_input(input_reader) };
-        assert_eq!(solve(&test_case), 12);
+"
+        .trim_ascii();
+        assert_eq!(TestCase::parse(7, 11, input.as_bytes()).solve(), 12);
     }
 }
