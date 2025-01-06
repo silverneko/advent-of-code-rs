@@ -1,111 +1,104 @@
-use itertools::Itertools;
+use itertools::iproduct;
 use std::io::{stdin, BufRead};
 use utils::{Direction, Grid, Point};
 
 #[derive(Clone)]
 struct TestCase {
-    grid: Grid<u8>,
+    grid: Grid<char>,
     moves: Vec<Point>,
 }
 
-fn parse_input<R: BufRead>(reader: R) -> TestCase {
-    let mut lines = reader.lines().map(|e| e.unwrap());
-    let grid: Grid<u8> = lines
-        .by_ref()
-        .take_while(|e| !e.is_empty())
-        .map(|e| e.into())
-        .collect::<Vec<Vec<u8>>>()
-        .into();
-    let moves = lines
-        .take_while(|e| !e.is_empty())
-        .flat_map(|e| e.into_bytes())
-        .map(|b| match b {
-            b'^' => Direction::UP,
-            b'v' => Direction::DOWN,
-            b'>' => Direction::RIGHT,
-            b'<' => Direction::LEFT,
-            t => panic!("unexpected direction: {t:?}"),
-        })
-        .collect();
-    TestCase { grid, moves }
-}
-
 impl TestCase {
-    fn upscale(mut self) -> Self {
-        self.grid = self
+    fn parse(reader: impl BufRead) -> Self {
+        let mut lines = reader.lines().map(|e| e.unwrap());
+        let grid = lines
+            .by_ref()
+            .take_while(|e| !e.is_empty())
+            .map(|e| e.chars().collect())
+            .collect::<Vec<_>>()
+            .into();
+        let moves = lines
+            .take_while(|e| !e.is_empty())
+            .flat_map(|e| e.chars().collect::<Vec<_>>())
+            .map(|b| match b {
+                '^' => Direction::UP,
+                'v' => Direction::DOWN,
+                '>' => Direction::RIGHT,
+                '<' => Direction::LEFT,
+                t => panic!("unexpected direction: {t:?}"),
+            })
+            .collect();
+        Self { grid, moves }
+    }
+
+    fn upscale(&self) -> Self {
+        let grid = self
             .grid
             .buf
-            .into_iter()
+            .iter()
             .map(|row| {
-                row.into_iter()
-                    .flat_map(|b| match b {
-                        b'#' => [b'#', b'#'],
-                        b'.' => [b'.', b'.'],
-                        b'O' => [b'[', b']'],
-                        b'@' => [b'@', b'.'],
+                row.iter()
+                    .flat_map(|&b| match b {
+                        '#' => ['#', '#'],
+                        '.' => ['.', '.'],
+                        'O' => ['[', ']'],
+                        '@' => ['@', '.'],
                         t => panic!("unexpected token: {t:?}"),
                     })
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>()
             .into();
-        self
+        Self { grid, moves: self.moves.clone() }
     }
 }
 
-fn try_move(s: Point, d: Point, grid: &mut Grid<u8>) -> bool {
+fn try_move(s: Point, d: Direction, grid: &mut Grid<char>) -> bool {
     let n = s + d;
     let can_move = match grid[n] {
-        b'#' => false,
-        b'.' => true,
-        b'O' => try_move(n, d, grid),
-        b'[' => try_move(n + Direction::RIGHT, d, grid) && try_move(n, d, grid),
-        b']' => try_move(n + Direction::LEFT, d, grid) && try_move(n, d, grid),
+        '#' => false,
+        '.' => true,
+        'O' => try_move(n, d, grid),
+        '[' => try_move(n + Direction::RIGHT, d, grid) && try_move(n, d, grid),
+        ']' => try_move(n + Direction::LEFT, d, grid) && try_move(n, d, grid),
         t => panic!("unexpected token: {t:?}"),
     };
     if can_move {
         grid[n] = grid[s];
-        grid[s] = b'.';
+        grid[s] = '.';
     }
     can_move
 }
 
-fn solve(data: TestCase) -> u64 {
-    let TestCase { mut grid, moves } = data;
+fn solve(data: &TestCase) -> u64 {
+    let TestCase { grid, moves } = data;
     println!("Initial state:\n{grid}");
 
-    let mut s: Point =
-        (0..grid.h).cartesian_product(0..grid.w).find(|&p| grid[p] == b'@').unwrap().into();
-
-    for &d in moves.iter() {
+    let s: Point = iproduct!(0..grid.h, 0..grid.w).find(|&p| grid[p] == '@').unwrap().into();
+    let (grid, _) = moves.iter().fold((grid.clone(), s), |(grid, s), &d| {
         let mut try_grid = grid.clone();
-        if try_move(s, d, &mut try_grid) {
-            grid = try_grid;
-            s = s + d;
-        }
+        let (grid, s) = if try_move(s, d, &mut try_grid) { (try_grid, s + d) } else { (grid, s) };
         // DEBUG - print small samples only
         if moves.len() < 30 {
             println!("Move {d:?}:\n{grid}");
         }
-    }
+        (grid, s)
+    });
     println!("End state:\n{grid}");
-
-    (0..grid.h)
-        .cartesian_product(0..grid.w)
-        .filter(|&p| matches!(grid[p], b'O' | b'['))
+    iproduct!(0..grid.h, 0..grid.w)
+        .filter(|&p| matches!(grid[p], 'O' | '['))
         .map(|(i, j)| (i * 100 + j) as u64)
         .sum()
 }
 
 fn main() {
-    let test_case = parse_input(stdin().lock());
-    println!("{:?},{:?}", solve(test_case.clone()), solve(test_case.upscale()));
+    let test_case = TestCase::parse(stdin().lock());
+    println!("{:?},{:?}", solve(&test_case), solve(&test_case.upscale()));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_sample_small() {
@@ -122,8 +115,7 @@ mod tests {
 <^^>>>vv<v>>v<<
 "
         .trim();
-        let reader = Cursor::new(input);
-        assert_eq!(solve(parse_input(reader)), 2028);
+        assert_eq!(solve(&TestCase::parse(input.as_bytes())), 2028);
     }
 
     #[test]
@@ -152,9 +144,8 @@ vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
 v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 "
         .trim();
-        let reader = Cursor::new(input);
-        assert_eq!(solve(parse_input(reader.clone())), 10092);
-        assert_eq!(solve(parse_input(reader).upscale()), 9021);
+        assert_eq!(solve(&TestCase::parse(input.as_bytes())), 10092);
+        assert_eq!(solve(&TestCase::parse(input.as_bytes()).upscale()), 9021);
     }
 
     #[test]
@@ -171,7 +162,6 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 <vv<<^^<<^^
 "
         .trim();
-        let reader = Cursor::new(input);
-        assert_eq!(solve(parse_input(reader).upscale()), 618);
+        assert_eq!(solve(&TestCase::parse(input.as_bytes()).upscale()), 618);
     }
 }

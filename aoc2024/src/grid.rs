@@ -136,13 +136,10 @@ impl<T> Grid<T> {
     }
 }
 
-impl std::fmt::Display for Grid<u8> {
+impl std::fmt::Display for Grid<char> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..self.h {
-            for j in 0..self.w {
-                write!(f, "{}", char::from_u32(self[(i, j)].into()).expect("ascii"))?;
-            }
-            writeln!(f)?;
+        for row in self.buf.iter() {
+            writeln!(f, "{}", row.iter().collect::<String>())?;
         }
         Ok(())
     }
