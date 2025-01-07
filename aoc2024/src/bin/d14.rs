@@ -1,5 +1,7 @@
-use itertools::iproduct;
+use itertools::Itertools;
 use regex::Regex;
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::io::{stdin, BufRead};
 use utils::{Direction, Grid, Point};
 
@@ -28,17 +30,22 @@ impl TestCase {
         Self { h, w, robots }
     }
 
-    fn step(&self, (p, v): (Point, Direction), t: isize) -> Point {
-        let q = p + v * t;
-        (q.0.rem_euclid(self.w as isize), q.1.rem_euclid(self.h as isize)).into()
+    fn step(&self, t: isize) -> Vec<Point> {
+        let (h, w) = (self.h as isize, self.w as isize);
+        self.robots
+            .iter()
+            .map(|(p, v)| {
+                let q = p + v * t;
+                (q.0.rem_euclid(w), q.1.rem_euclid(h)).into()
+            })
+            .collect()
     }
 
     fn solve(&self) -> u64 {
         let (h, w) = (self.h as isize, self.w as isize);
-        self.robots
-            .iter()
-            .fold([0; 4], |mut quad, &robot| {
-                let Point(x, y) = self.step(robot, 100);
+        self.step(100)
+            .into_iter()
+            .fold([0; 4], |mut quad, Point(x, y)| {
                 quad[0] += if x < w / 2 && y < h / 2 { 1 } else { 0 };
                 quad[1] += if x < w / 2 && y > h / 2 { 1 } else { 0 };
                 quad[2] += if x > w / 2 && y < h / 2 { 1 } else { 0 };
@@ -51,56 +58,53 @@ impl TestCase {
 
     fn draw(&self, t: isize) -> Grid<char> {
         let mut canvas = Grid::new(' ', self.h, self.w);
-        for &robot in self.robots.iter() {
-            let Point(x, y) = self.step(robot, t);
+        for Point(x, y) in self.step(t) {
             canvas[(y, x)] = '#';
         }
         canvas
     }
 }
 
-fn entropy(img: &Grid<char>) -> f64 {
-    let hist: [usize; 1 << 4] = iproduct!(0..img.h - 1, 0..img.w - 1)
-        .map(|(x, y)| {
-            iproduct!(x..x + 2, y..y + 2).fold(0, |acc, ij| (img[ij] == '#') as usize | acc << 1)
-        })
-        .fold([0; 1 << 4], |mut hist, x| {
-            hist[x] += 1;
-            hist
-        });
-    let total = hist.iter().sum::<usize>() as f64;
-    let pdf = hist.into_iter().filter(|&v| v > 0).map(|v| v as f64 / total);
+fn entropy<T: Eq + Hash>(samples: &[T]) -> f64 {
+    let hist: HashMap<_, usize> = samples.iter().counts();
+    let sum = hist.values().sum::<usize>() as f64;
+    let pdf = hist.into_values().map(|v| v as f64 / sum);
     pdf.map(|p| -p * p.log2()).sum()
 }
 
-fn print_preview(img: &Grid<char>) {
-    for x in (0..img.h).step_by(4) {
-        for y in (0..img.w).step_by(4) {
-            let s = iproduct!(x..x + 4, y..y + 4).filter(|&ij| img.get(ij) == Some(&'#')).count();
-            let t = match s {
-                0..=1 => ' ',
-                2 => '.',
-                3.. => '#',
-            };
-            print!("{t}");
-        }
-        println!();
-    }
-}
-
+/*
+ * Let mx = has minimum entropy w.r.t. x axis
+ * Let my = has minimum entropy w.r.t. y axis
+ * Find t such that both x and y have minimum entropy.
+ * Known:
+ *   h and w are primes
+ *   t = mx (mod w)
+ *   t = my (mod h)
+ *   t = t (mod w*h)
+ * Which means:
+ *   t = mx + a * w
+ *   mx + a * w = my (mod h)
+ *   a = (my - mx) * w^-1 (mod h)
+ * Thus:
+ *   k = w^-1 (mod h)
+ *   t = mx + (my - mx) * k * w (mod w*h)
+ */
 fn main() {
-    let test_case = TestCase::parse(103, 101, stdin().lock());
-    println!("Part1: {}", test_case.solve());
-    let mut min_e = f64::MAX;
-    for t in 0..101 * 103 {
-        let img = test_case.draw(t);
-        let e = entropy(&img);
-        if min_e > e {
-            min_e = e;
-            println!("Step {t}, entropy {e:.8}");
-            print_preview(&img);
-        }
-    }
+    let data = TestCase::parse(103, 101, stdin().lock());
+    println!("Part1: {}", data.solve());
+
+    let (h, w) = (data.h as isize, data.w as isize);
+    let (_, mx) = (0..w)
+        .map(|t| (entropy(&data.step(t).into_iter().map(|Point(x, _)| x).collect::<Vec<_>>()), t))
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .unwrap();
+    let (_, my) = (0..h)
+        .map(|t| (entropy(&data.step(t).into_iter().map(|Point(_, y)| y).collect::<Vec<_>>()), t))
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .unwrap();
+    let k = (0..h).find(|x| x * w % h == 1).expect("modulus inverse of w must exist");
+    let t = (mx + (my - mx) * k * w).rem_euclid(h * w);
+    println!("Step {t}:\n{}", data.draw(t));
 }
 
 #[cfg(test)]
