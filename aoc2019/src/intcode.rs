@@ -9,12 +9,12 @@ pub struct Intcode {
     ra: isize,
 }
 
-pub struct Output<'a, I> {
+pub struct Output<'a> {
     program: &'a mut Intcode,
-    input: I,
+    input: Box<dyn Iterator<Item = isize> + 'a>,
 }
 
-impl<I: Iterator<Item = isize>> Iterator for Output<'_, I> {
+impl Iterator for Output<'_> {
     type Item = isize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -118,15 +118,21 @@ impl Intcode {
         }
     }
 
+    pub fn halted(&self) -> bool {
+        matches!(Instruction::parse(&self.code[self.pc..]), Instruction::Halt)
+    }
+
     fn step(&mut self, mut input: impl Iterator<Item = isize>) -> Option<isize> {
         loop {
             let instruction = Instruction::parse(&self.code[self.pc..]);
-            self.pc += instruction.width();
             match instruction {
                 Instruction::Add(a, b, c) => *self.get_mut(c) = self.get(a) + self.get(b),
                 Instruction::Mul(a, b, c) => *self.get_mut(c) = self.get(a) * self.get(b),
                 Instruction::Input(a) => *self.get_mut(a) = input.next().expect("input exhausted"),
-                Instruction::Output(a) => return Some(self.get(a)),
+                Instruction::Output(a) => {
+                    self.pc += instruction.width();
+                    return Some(self.get(a));
+                }
                 Instruction::Jit(a, b) => {
                     if self.get(a) != 0 {
                         self.pc = self.get(b) as usize;
@@ -144,11 +150,12 @@ impl Intcode {
                 Instruction::Rela(a) => self.ra += self.get(a),
                 Instruction::Halt => return None,
             }
+            self.pc += instruction.width();
         }
     }
 
-    pub fn run<I: IntoIterator>(&mut self, input: I) -> Output<'_, I::IntoIter> {
-        Output { program: self, input: input.into_iter() }
+    pub fn run<'a>(&'a mut self, input: impl IntoIterator<Item = isize> + 'a) -> Output<'a> {
+        Output { program: self, input: Box::new(input.into_iter()) }
     }
 }
 
