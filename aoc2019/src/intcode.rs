@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
@@ -8,8 +7,19 @@ pub struct Intcode {
 
     pc: usize,
     ra: isize,
-    inputs: VecDeque<isize>,
-    outputs: Vec<isize>,
+}
+
+pub struct Output<'a, I> {
+    program: &'a mut Intcode,
+    input: I,
+}
+
+impl<I: Iterator<Item = isize>> Iterator for Output<'_, I> {
+    type Item = isize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.program.step(self.input.by_ref())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -85,14 +95,6 @@ impl Intcode {
         s.parse().unwrap()
     }
 
-    pub fn input(&mut self, ns: &[isize]) {
-        self.inputs.extend(ns);
-    }
-
-    pub fn output(&self) -> &[isize] {
-        &self.outputs
-    }
-
     fn get(&self, p: Param) -> isize {
         match p {
             Param::Imme(a) => a,
@@ -116,14 +118,15 @@ impl Intcode {
         }
     }
 
-    pub fn run(&mut self) -> &mut Self {
+    fn step(&mut self, mut input: impl Iterator<Item = isize>) -> Option<isize> {
         loop {
             let instruction = Instruction::parse(&self.code[self.pc..]);
+            self.pc += instruction.width();
             match instruction {
                 Instruction::Add(a, b, c) => *self.get_mut(c) = self.get(a) + self.get(b),
                 Instruction::Mul(a, b, c) => *self.get_mut(c) = self.get(a) * self.get(b),
-                Instruction::Input(a) => *self.get_mut(a) = self.inputs.pop_front().expect("EOF"),
-                Instruction::Output(a) => self.outputs.push(self.get(a)),
+                Instruction::Input(a) => *self.get_mut(a) = input.next().expect("input exhausted"),
+                Instruction::Output(a) => return Some(self.get(a)),
                 Instruction::Jit(a, b) => {
                     if self.get(a) != 0 {
                         self.pc = self.get(b) as usize;
@@ -139,20 +142,85 @@ impl Intcode {
                 Instruction::Tlt(a, b, c) => *self.get_mut(c) = (self.get(a) < self.get(b)).into(),
                 Instruction::Teq(a, b, c) => *self.get_mut(c) = (self.get(a) == self.get(b)).into(),
                 Instruction::Rela(a) => self.ra += self.get(a),
-                Instruction::Halt => break,
+                Instruction::Halt => return None,
             }
-            self.pc += instruction.width();
         }
-        self
+    }
+
+    pub fn run<I: IntoIterator>(&mut self, input: I) -> Output<'_, I::IntoIter> {
+        Output { program: self, input: input.into_iter() }
     }
 }
 
 #[macro_export]
 macro_rules! assert_intcode {
-    ($program:expr, $input:expr, $expect:expr) => {{
-        let mut program = Intcode::parse($program);
-        program.input($input);
-        program.run();
-        assert_eq!(program.output(), $expect);
-    }};
+    ($program:expr, $expect:expr) => {
+        itertools::assert_equal(Intcode::parse($program).run(std::iter::empty()), $expect)
+    };
+    ($program:expr, $input:expr, $expect:expr) => {
+        itertools::assert_equal(Intcode::parse($program).run($input), $expect)
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_input_output() {
+        // Input one number, time by three, then output it.
+        assert_intcode!("3,9,1002,9,3,9,4,9,99,0", [33], [99]);
+    }
+
+    #[test]
+    fn test_teq() {
+        // Test eq 8
+        assert_intcode!("3,9,8,9,10,9,4,9,99,-1,8", [1], [0]);
+        assert_intcode!("3,9,8,9,10,9,4,9,99,-1,8", [8], [1]);
+        assert_intcode!("3,3,1108,-1,8,3,4,3,99", [1], [0]);
+        assert_intcode!("3,3,1108,-1,8,3,4,3,99", [8], [1]);
+    }
+
+    #[test]
+    fn test_tlt() {
+        // Test lt 8
+        assert_intcode!("3,9,7,9,10,9,4,9,99,-1,8", [7], [1]);
+        assert_intcode!("3,9,7,9,10,9,4,9,99,-1,8", [8], [0]);
+        assert_intcode!("3,3,1107,-1,8,3,4,3,99", [-1], [1]);
+        assert_intcode!("3,3,1107,-1,8,3,4,3,99", [10], [0]);
+    }
+
+    #[test]
+    fn test_jump() {
+        // Jump if true / Jump if false
+        assert_intcode!("3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9", [0], [0]);
+        assert_intcode!("3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9", [1], [1]);
+        assert_intcode!("3,3,1105,-1,9,1101,0,0,12,4,12,99,1", [0], [0]);
+        assert_intcode!("3,3,1105,-1,9,1101,0,0,12,4,12,99,1", [-1], [1]);
+    }
+
+    #[test]
+    fn test_large_program() {
+        let program = r"
+3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99
+";
+        assert_intcode!(program, [-1], [999]);
+        assert_intcode!(program, [8], [1000]);
+        assert_intcode!(program, [10], [1001]);
+    }
+
+    #[test]
+    fn test_quine() {
+        let quine = "109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99";
+        let expect = quine.split(",").map(|e| e.parse::<isize>().unwrap());
+        assert_intcode!(quine, expect);
+    }
+
+    #[test]
+    fn test_bignum() {
+        assert_intcode!("1102,34915192,34915192,7,4,7,99,0", [1219070632396864]);
+        assert_intcode!("104,1125899906842624,99", [1125899906842624]);
+    }
 }
