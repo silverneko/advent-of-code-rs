@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Hash, Eq, PartialEq)]
 pub struct Intcode {
     pub code: Vec<isize>,
 
@@ -35,17 +35,18 @@ enum Instruction {
 
 impl Instruction {
     fn parse(code: &[isize]) -> Self {
-        let opcode = code[0] % 100;
-        let mode_mask = format!("{:0>3}", code[0] / 100);
-        let mut params =
-            mode_mask.chars().rev().zip(code.iter().skip(1).copied()).map(|(m, p)| match m {
-                '0' => Param::Addr(p),
-                '1' => Param::Imme(p),
-                '2' => Param::Rela(p),
-                _ => panic!("Unexpected parameter mode {m}"),
-            });
+        let mut params = code.iter().skip(1).copied().scan(code[0] / 100, |st, p| {
+            let param = match *st % 10 {
+                0 => Param::Addr(p),
+                1 => Param::Imme(p),
+                2 => Param::Rela(p),
+                m => panic!("Unexpected parameter mode {m}"),
+            };
+            *st /= 10;
+            Some(param)
+        });
         let mut param = || params.next().unwrap();
-        match opcode {
+        match code[0] % 100 {
             1 => Self::Add(param(), param(), param()),
             2 => Self::Mul(param(), param(), param()),
             3 => Self::Input(param()),
@@ -56,7 +57,7 @@ impl Instruction {
             8 => Self::Teq(param(), param(), param()),
             9 => Self::Rela(param()),
             99 => Self::Halt,
-            _ => panic!("Unexpected opcode {opcode}"),
+            o => panic!("Unexpected opcode {o}"),
         }
     }
 
@@ -75,7 +76,7 @@ impl FromStr for Intcode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let code = s.split(',').map(|e| e.trim().parse()).collect::<Result<Vec<_>, _>>()?;
-        Ok(Self { code, pc: 0, ra: 0, inputs: VecDeque::new(), outputs: Vec::new() })
+        Ok(Self { code, ..Default::default() })
     }
 }
 
@@ -109,7 +110,7 @@ impl Intcode {
 
     fn get_mut(&mut self, p: Param) -> &mut isize {
         match p {
-            Param::Imme(_) => panic!("cannot write to immediate value"),
+            Param::Imme(_) => panic!("write operand cannot be an immediate value {p:?}"),
             Param::Addr(a) => self.get_or_resize(a as usize),
             Param::Rela(a) => self.get_or_resize((self.ra + a) as usize),
         }

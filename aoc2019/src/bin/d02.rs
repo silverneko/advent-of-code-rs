@@ -17,7 +17,7 @@ fn part2(program: &Intcode, needle: isize) -> isize {
 
 fn main() {
     let program: Intcode = stdin().lines().next().unwrap().unwrap().parse().unwrap();
-    println!("{},{}", part1(&program, 12, 2), part2(&program, 19690720));
+    dbg!(part1(&program, 12, 2), part2(&program, 19690720));
 }
 
 #[cfg(test)]
