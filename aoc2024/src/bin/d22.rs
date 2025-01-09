@@ -30,13 +30,10 @@ impl TestCase {
             .nums
             .iter()
             .map(|&n| {
-                let mut state = n;
-                std::iter::repeat_with(move || {
-                    state = Self::step(state);
-                    state
-                })
-                .take(2000)
-                .collect()
+                std::iter::successors(Some(n), |&st| Some(Self::step(st)))
+                    .skip(1)
+                    .take(2000)
+                    .collect()
             })
             .collect();
         let ans1 = generated_nums.iter().map(|v| v.last().unwrap()).sum();
