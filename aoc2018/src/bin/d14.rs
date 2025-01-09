@@ -5,36 +5,50 @@ struct State {
 }
 
 impl State {
-    fn step(&mut self) {
-        let s = self.nums[self.p] + self.nums[self.q];
-        if s >= 10 {
-            self.nums.push(s / 10);
-        }
-        self.nums.push(s % 10);
-        self.p = (self.p + self.nums[self.p] as usize + 1) % self.nums.len();
-        self.q = (self.q + self.nums[self.q] as usize + 1) % self.nums.len();
+    fn new() -> Self {
+        Self { p: 0, q: 1, nums: vec![3, 7] }
     }
 
-    fn score(&self, t: usize) -> String {
-        self.nums[t..].iter().take(10).map(|d| d.to_string()).collect()
+    fn step(self) -> Self {
+        let Self { p, q, mut nums } = self;
+        let s = nums[p] + nums[q];
+        if s >= 10 {
+            nums.push(s / 10);
+        }
+        nums.push(s % 10);
+        let p = (p + nums[p] as usize + 1) % nums.len();
+        let q = (q + nums[q] as usize + 1) % nums.len();
+        Self { p, q, nums }
+    }
+
+    fn gen(n: usize) -> String {
+        let mut state = Self::new();
+        while state.nums.len() < n + 10 {
+            state = state.step();
+        }
+        state.nums[n..].iter().take(10).map(|d| d.to_string()).collect()
+    }
+
+    fn find(pat: &str) -> usize {
+        let seq: Vec<u8> = pat.chars().map(|c| c.to_string().parse().unwrap()).collect();
+        let mut state = Self::new();
+        loop {
+            for off in [0, 1] {
+                let len = state.nums.len() - off;
+                let nums = &state.nums[..len];
+                if nums.ends_with(&seq) {
+                    return len - seq.len();
+                }
+            }
+            state = state.step();
+        }
     }
 }
 
 fn main() {
-    let input = 635041;
-    let input2 = [6, 3, 5, 0, 4, 1];
-    let mut state = State { p: 0, q: 1, nums: vec![3, 7] };
-    let pos = loop {
-        state.step();
-        if state.nums.ends_with(&input2) {
-            break state.nums.len() - 6;
-        }
-        let ss = &state.nums[..state.nums.len() - 1];
-        if ss.ends_with(&input2) {
-            break ss.len() - 6;
-        }
-    };
-    println!("{},{pos}", state.score(input));
+    let input = std::io::stdin().lines().next().unwrap().unwrap();
+    println!("{}", State::gen(input.parse().unwrap()));
+    println!("{}", State::find(&input));
 }
 
 #[cfg(test)]
@@ -42,14 +56,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sample() {
-        let mut state = State { p: 0, q: 1, nums: vec![3, 7] };
-        while state.nums.len() < 2030 {
-            state.step();
-        }
-        assert_eq!(state.score(5), "0124515891");
-        assert_eq!(state.score(9), "5158916779");
-        assert_eq!(state.score(18), "9251071085");
-        assert_eq!(state.score(2018), "5941429882");
+    fn test_part1() {
+        assert_eq!(State::gen(5), "0124515891");
+        assert_eq!(State::gen(9), "5158916779");
+        assert_eq!(State::gen(18), "9251071085");
+        assert_eq!(State::gen(2018), "5941429882");
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(State::find("01245"), 5);
+        assert_eq!(State::find("51589"), 9);
+        assert_eq!(State::find("92510"), 18);
+        assert_eq!(State::find("59414"), 2018);
     }
 }
