@@ -46,7 +46,7 @@ impl State {
         move_up_and_clear_lines(stdout(), self.last_print_lines as u32);
         println!("{grid}Score: {}", self.score);
         self.last_print_lines = grid.h + 1;
-        std::thread::sleep(std::time::Duration::from_micros(2000));
+        std::thread::sleep(std::time::Duration::from_millis(2));
     }
 }
 
