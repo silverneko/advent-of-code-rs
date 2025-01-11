@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::io::{stdin, BufRead};
 use std::ops::{BitAnd, BitOr, BitXor};
 use std::str::{from_utf8, FromStr};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, LazyLock, Mutex};
 use std::thread;
 
 #[allow(clippy::upper_case_acronyms)]
@@ -180,11 +180,10 @@ impl TestCase {
         let results = Arc::new(Mutex::new(Vec::with_capacity(work_queue.len())));
         let work_queue = Arc::new(Mutex::new(work_queue));
 
-        static MAX_JOBS: OnceLock<usize> = OnceLock::new();
-        let max_jobs =
-            *MAX_JOBS.get_or_init(|| dbg!(thread::available_parallelism().unwrap().into()));
+        static MAX_JOBS: LazyLock<usize> =
+            LazyLock::new(|| dbg!(thread::available_parallelism().unwrap().into()));
         let mut thread_handlers = Vec::new();
-        for _ in 0..max_jobs {
+        for _ in 0..*MAX_JOBS {
             let work_queue = Arc::clone(&work_queue);
             let results = Arc::clone(&results);
             let mut data = self.clone();
