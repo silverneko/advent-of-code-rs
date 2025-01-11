@@ -1,13 +1,14 @@
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::io::stdin;
-use utils::{Direction, Grid, Intcode, Point};
+use std::io::{stdin, stdout};
+use utils::{move_up_and_clear_lines, Direction, Grid, Intcode, Point};
 
 #[derive(Default)]
 struct State {
     entities: HashMap<Point, isize>,
     score: isize,
+    last_print_lines: usize,
 }
 
 impl State {
@@ -19,15 +20,13 @@ impl State {
         }
     }
 
-    fn ball(&self) -> Point {
-        *self.entities.iter().find(|(_, &t)| t == 4).unwrap().0
+    fn should_move(&self) -> isize {
+        let ball = self.entities.iter().find(|(_, &t)| t == 4).unwrap().0 .1;
+        let bar = self.entities.iter().find(|(_, &t)| t == 3).unwrap().0 .1;
+        (ball - bar).signum()
     }
 
-    fn bar(&self) -> Point {
-        *self.entities.iter().find(|(_, &t)| t == 3).unwrap().0
-    }
-
-    fn print(&self) {
+    fn print(&mut self) {
         let minx = self.entities.keys().map(|p| p.0).min().unwrap();
         let maxx = self.entities.keys().map(|p| p.0).max().unwrap();
         let miny = self.entities.keys().map(|p| p.1).min().unwrap();
@@ -44,21 +43,10 @@ impl State {
                 _ => panic!("Unexpected entity {t}"),
             };
         }
+        move_up_and_clear_lines(stdout(), self.last_print_lines as u32);
         println!("{grid}Score: {}", self.score);
-    }
-}
-
-struct InputController<'a> {
-    state: &'a RefCell<State>,
-}
-
-impl Iterator for InputController<'_> {
-    type Item = isize;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let state = self.state.borrow();
-        state.print();
-        Some(state.ball().1.cmp(&state.bar().1) as isize)
+        self.last_print_lines = grid.h + 1;
+        std::thread::sleep(std::time::Duration::from_micros(2000));
     }
 }
 
@@ -72,8 +60,10 @@ fn main() {
 
     program.code[0] = 2;
     let state = RefCell::new(State::default());
-    for (x, y, t) in program.run(InputController { state: &state }).tuples() {
-        state.borrow_mut().update(x, y, t);
+    let joystick = std::iter::repeat_with(|| state.borrow().should_move());
+    for (x, y, t) in program.run(joystick).tuples() {
+        let mut state = state.borrow_mut();
+        state.update(x, y, t);
+        state.print();
     }
-    state.borrow().print();
 }
