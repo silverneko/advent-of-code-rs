@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::collections::{HashMap, VecDeque};
 use std::io::{stdin, stdout};
-use utils::{move_up_and_clear_lines, Deferred, Direction, Grid, Intcode, Point};
+use utils::{terminal, Deferred, Direction, Grid, Intcode, Point};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
@@ -29,20 +29,14 @@ struct State<'a> {
     drone: Drone<'a>,
     entities: HashMap<Point, Entity>,
     pos: Point,
-    last_print_lines: usize,
 }
 
 impl<'a> State<'a> {
     fn new(drone: Drone<'a>) -> Self {
-        Self {
-            drone,
-            entities: HashMap::from([(Point(0, 0), Entity::Empty)]),
-            pos: Point(0, 0),
-            last_print_lines: 0,
-        }
+        Self { drone, entities: HashMap::from([(Point(0, 0), Entity::Empty)]), pos: Point(0, 0) }
     }
 
-    fn print(&mut self) {
+    fn print(&self) {
         let (minx, maxx) = self.entities.keys().map(|p| p.0).minmax().into_option().unwrap();
         let (miny, maxy) = self.entities.keys().map(|p| p.1).minmax().into_option().unwrap();
         let offset = Direction::new(minx, miny);
@@ -51,9 +45,8 @@ impl<'a> State<'a> {
             grid[p - offset] = t as u8 as char;
         }
         grid[self.pos - offset] = '@';
-        move_up_and_clear_lines(stdout(), self.last_print_lines as u32);
+        terminal::home(stdout());
         println!("{grid}");
-        self.last_print_lines = grid.h + 1;
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
 
@@ -111,6 +104,7 @@ impl<'a> State<'a> {
 fn main() {
     let mut program: Intcode = stdin().lines().next().unwrap().unwrap().parse().unwrap();
     let mut state = State::new(Drone(program.deferred_run()));
+    terminal::clear(stdout());
     state.slam();
     assert_eq!(state.pos, Point(0, 0));
     dbg!(state.bfs());

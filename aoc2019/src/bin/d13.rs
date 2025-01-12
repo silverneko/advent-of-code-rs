@@ -2,13 +2,12 @@ use itertools::Itertools;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::{stdin, stdout};
-use utils::{move_up_and_clear_lines, Direction, Grid, Intcode, Point};
+use utils::{terminal, Direction, Grid, Intcode, Point};
 
 #[derive(Default)]
 struct State {
     entities: HashMap<Point, isize>,
     score: isize,
-    last_print_lines: usize,
 }
 
 impl State {
@@ -26,7 +25,7 @@ impl State {
         (ball - bar).signum()
     }
 
-    fn print(&mut self) {
+    fn print(&self) {
         let minx = self.entities.keys().map(|p| p.0).min().unwrap();
         let maxx = self.entities.keys().map(|p| p.0).max().unwrap();
         let miny = self.entities.keys().map(|p| p.1).min().unwrap();
@@ -43,9 +42,8 @@ impl State {
                 _ => panic!("Unexpected entity {t}"),
             };
         }
-        move_up_and_clear_lines(stdout(), self.last_print_lines as u32);
+        terminal::home(stdout());
         println!("{grid}Score: {}", self.score);
-        self.last_print_lines = grid.h + 1;
         std::thread::sleep(std::time::Duration::from_millis(2));
     }
 }
@@ -61,6 +59,7 @@ fn main() {
     program.code[0] = 2;
     let state = RefCell::new(State::default());
     let joystick = std::iter::repeat_with(|| state.borrow().should_move());
+    terminal::clear(stdout());
     for (x, y, t) in program.run(joystick).tuples() {
         let mut state = state.borrow_mut();
         state.update(x, y, t);
