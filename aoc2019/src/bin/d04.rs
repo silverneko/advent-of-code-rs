@@ -28,15 +28,15 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&111111), true);
-        assert_eq!(part1(&223450), false);
-        assert_eq!(part1(&123789), false);
+        assert!(part1(&111111));
+        assert!(!part1(&223450));
+        assert!(!part1(&123789));
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&112233), true);
-        assert_eq!(part2(&123444), false);
-        assert_eq!(part2(&111122), true);
+        assert!(part2(&112233));
+        assert!(!part2(&123444));
+        assert!(part2(&111122));
     }
 }
