@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::num::ParseIntError;
 use std::str::FromStr;
+use std::sync::mpsc;
 
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq)]
 pub struct Intcode {
@@ -7,19 +9,6 @@ pub struct Intcode {
 
     pc: usize,
     ra: isize,
-}
-
-pub struct Output<'a> {
-    program: &'a mut Intcode,
-    input: Box<dyn Iterator<Item = isize> + 'a>,
-}
-
-impl Iterator for Output<'_> {
-    type Item = isize;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.program.step(self.input.by_ref())
-    }
 }
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -154,8 +143,37 @@ impl Intcode {
         }
     }
 
-    pub fn run<'a>(&'a mut self, input: impl IntoIterator<Item = isize> + 'a) -> Output<'a> {
-        Output { program: self, input: Box::new(input.into_iter()) }
+    pub fn run<'a>(
+        &'a mut self,
+        input: impl IntoIterator<Item = isize> + 'a,
+    ) -> impl Iterator<Item = isize> + 'a {
+        let mut input = input.into_iter();
+        std::iter::from_fn(move || self.step(input.by_ref()))
+    }
+
+    pub fn deferred_run(&mut self) -> Deferred<'_> {
+        Deferred::run(self)
+    }
+}
+
+pub struct Deferred<'a> {
+    output: Box<RefCell<dyn Iterator<Item = isize> + 'a>>,
+    tx: mpsc::Sender<isize>,
+}
+
+impl<'a> Deferred<'a> {
+    fn run(program: &'a mut Intcode) -> Self {
+        let (tx, rx) = mpsc::channel();
+        Self { output: Box::new(RefCell::new(program.run(rx))), tx }
+    }
+
+    pub fn send(&self, x: isize) {
+        self.tx.send(x).unwrap();
+    }
+
+    pub fn iter<'b>(&'b self) -> impl Iterator<Item = isize> + 'b + use<'b, 'a> {
+        let mut iter = self.output.borrow_mut();
+        std::iter::from_fn(move || iter.next())
     }
 }
 

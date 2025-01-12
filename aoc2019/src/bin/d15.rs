@@ -1,8 +1,7 @@
 use itertools::Itertools;
 use std::collections::{HashMap, VecDeque};
 use std::io::{stdin, stdout};
-use std::sync::mpsc;
-use utils::{move_up_and_clear_lines, Direction, Grid, Intcode, Point};
+use utils::{move_up_and_clear_lines, Deferred, Direction, Grid, Intcode, Point};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
@@ -12,20 +11,12 @@ enum Entity {
     Wall = b'#',
 }
 
-struct DroneControl<'a> {
-    output: Box<dyn Iterator<Item = isize> + 'a>,
-    tx: mpsc::Sender<isize>,
-}
+struct Drone<'a>(Deferred<'a>);
 
-impl<'a> DroneControl<'a> {
-    fn new(program: &'a mut Intcode) -> Self {
-        let (tx, rx) = mpsc::channel();
-        Self { output: Box::new(program.run(rx)), tx }
-    }
-
+impl Drone<'_> {
     fn try_move(&mut self, d: isize) -> Entity {
-        self.tx.send(d).unwrap();
-        match self.output.next() {
+        self.0.send(d);
+        match self.0.iter().next() {
             Some(0) => Entity::Wall,
             Some(1) => Entity::Empty,
             Some(2) => Entity::Tank,
@@ -35,14 +26,14 @@ impl<'a> DroneControl<'a> {
 }
 
 struct State<'a> {
-    drone: DroneControl<'a>,
+    drone: Drone<'a>,
     entities: HashMap<Point, Entity>,
     pos: Point,
     last_print_lines: usize,
 }
 
 impl<'a> State<'a> {
-    fn new(drone: DroneControl<'a>) -> Self {
+    fn new(drone: Drone<'a>) -> Self {
         Self {
             drone,
             entities: HashMap::from([(Point(0, 0), Entity::Empty)]),
@@ -119,7 +110,7 @@ impl<'a> State<'a> {
 
 fn main() {
     let mut program: Intcode = stdin().lines().next().unwrap().unwrap().parse().unwrap();
-    let mut state = State::new(DroneControl::new(&mut program));
+    let mut state = State::new(Drone(program.deferred_run()));
     state.slam();
     assert_eq!(state.pos, Point(0, 0));
     dbg!(state.bfs());

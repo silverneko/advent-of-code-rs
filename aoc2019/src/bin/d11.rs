@@ -2,7 +2,6 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::io::stdin;
 use std::iter::once;
-use std::sync::mpsc;
 use utils::{Direction, Grid, Intcode, Point};
 
 struct State {
@@ -55,11 +54,11 @@ impl State {
 fn generate(program: &Intcode, init_tile: isize) {
     let mut program = program.clone();
     let mut state = State::new();
-    let (tx, rx) = mpsc::channel();
-    tx.send(init_tile).unwrap();
-    for (c, r) in program.run(rx).tuples() {
+    let deferred = program.deferred_run();
+    deferred.send(init_tile);
+    for (c, r) in deferred.iter().tuples() {
         state.advance(c, r);
-        tx.send(state.color()).unwrap();
+        deferred.send(state.color());
     }
     println!("{}", state.draw());
     println!("Painted tiles: {}\n", state.painted.len());
