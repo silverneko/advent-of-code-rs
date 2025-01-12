@@ -171,6 +171,12 @@ impl<'a> Deferred<'a> {
         self.tx.send(x).unwrap();
     }
 
+    pub fn send_seq(&self, seq: impl IntoIterator<Item = isize>) {
+        for s in seq {
+            self.send(s);
+        }
+    }
+
     pub fn iter<'b>(&'b self) -> impl Iterator<Item = isize> + 'b + use<'b, 'a> {
         let mut iter = self.output.borrow_mut();
         std::iter::from_fn(move || iter.next())
