@@ -8,4 +8,5 @@ name = "utils"
 
 [dependencies]
 itertools = "0.14.0"
+rustyline = "15.0.0"
 terminfo = "0.9.0"
