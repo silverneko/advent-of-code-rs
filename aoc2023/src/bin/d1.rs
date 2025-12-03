@@ -1,6 +1,6 @@
 use std::io;
 
-const numbers: &[(u32, &str)] = &[
+const NUMBERS: &[(u32, &str)] = &[
     (1, "one"),
     (2, "two"),
     (3, "three"),
@@ -30,7 +30,7 @@ fn main() {
         let mut b = None;
         for (idx, _) in line.char_indices() {
             let s = &line[idx..];
-            for (n, p) in numbers {
+            for (n, p) in NUMBERS {
                 if s.starts_with(p) {
                     a = a.or(Some(n));
                     b = Some(n);
