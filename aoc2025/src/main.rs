@@ -1,7 +1,5 @@
 use clap::{Parser, Subcommand};
 
-pub mod grid;
-
 /// Advent of Code 2025
 #[derive(Parser)]
 struct Cli {
@@ -9,14 +7,14 @@ struct Cli {
     command: Commands,
 }
 
-macro_rules! gen_main {
-    ($($M:ident :: $m:ident $(,)?)+) => {
+macro_rules! solutions {
+    ($($M:ident($m:ident :: $entry:ident)),+ $(,)?) => {
         $(mod $m;)+
 
         #[derive(Subcommand)]
         #[command(disable_help_subcommand(true))]
         enum Commands {
-            $($M($m::Main),)+
+            $($M($m::$entry),)+
         }
 
         fn main() {
@@ -27,13 +25,15 @@ macro_rules! gen_main {
     }
 }
 
-gen_main! {
-    D01::d01,
-    D02::d02,
-    D03::d03,
-    D04::d04,
-    D05::d05,
-    Hello::hello,
+pub mod grid;
+
+solutions! {
+    D01(d01::Main),
+    D02(d02::Main),
+    D03(d03::Main),
+    D04(d04::Main),
+    D05(d05::Main),
+    Hello(hello::Main),
 }
 
 #[test]
