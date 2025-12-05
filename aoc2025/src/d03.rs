@@ -1,5 +1,4 @@
 use clap::Args;
-use std::cmp;
 use std::io::{BufRead, stdin};
 
 /// Day 3: Lobby
@@ -23,8 +22,7 @@ impl TestCase {
 
     fn solve_one(w: u32, seq: &[u64]) -> u64 {
         seq.iter().copied().fold(0, |acc, v| {
-            cmp::max(
-                acc,
+            acc.max(
                 (0..w)
                     .map(|idx| {
                         let b = 10u64.pow(idx);

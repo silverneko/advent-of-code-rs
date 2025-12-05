@@ -32,6 +32,7 @@ gen_main! {
     D02::d02,
     D03::d03,
     D04::d04,
+    D05::d05,
     Hello::hello,
 }
 
