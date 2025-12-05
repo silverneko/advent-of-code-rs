@@ -6,23 +6,25 @@ struct Cli {
     command: Commands,
 }
 
-mod d01;
-mod d03;
+macro_rules! gen_main {
+    ($($M:ident :: $m:ident),+) => {
+        $(mod $m;)+
 
-#[derive(Subcommand)]
-#[command(disable_help_subcommand(true))]
-enum Commands {
-    D01(d01::Main),
-    D03(d03::Main),
-}
+        #[derive(Subcommand)]
+        #[command(disable_help_subcommand(true))]
+        enum Commands {
+            $($M($m::Main),)+
+        }
 
-fn main() {
-    let cli = Cli::parse();
-    match cli.command {
-        Commands::D01(v) => v.run(),
-        Commands::D03(v) => v.run(),
+        fn main() {
+            match Cli::parse().command {
+                $(Commands::$M(v) => v.run(),)+
+            }
+        }
     }
 }
+
+gen_main! {D01::d01, D02::d02, D03::d03}
 
 #[test]
 fn verify_cli() {
