@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 
 pub mod grid;
 
+/// Advent of Code 2025
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]
@@ -9,7 +10,7 @@ struct Cli {
 }
 
 macro_rules! gen_main {
-    ($($M:ident :: $m:ident),+) => {
+    ($($M:ident :: $m:ident $(,)?)+) => {
         $(mod $m;)+
 
         #[derive(Subcommand)]
@@ -26,7 +27,13 @@ macro_rules! gen_main {
     }
 }
 
-gen_main! {D01::d01, D02::d02, D03::d03, D04::d04}
+gen_main! {
+    D01::d01,
+    D02::d02,
+    D03::d03,
+    D04::d04,
+    Hello::hello,
+}
 
 #[test]
 fn verify_cli() {

@@ -118,7 +118,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_sample() {
@@ -130,7 +129,6 @@ Register C: 0
 Program: 0,1,5,4,3,0
 "
         .trim();
-        let reader = Cursor::new(input);
-        assert_eq!(solve(State::parse(reader)).iter().join(","), "4,6,3,5,6,3,5,2,1,0");
+        assert_eq!(solve(State::parse(input.as_bytes())).iter().join(","), "4,6,3,5,6,3,5,2,1,0");
     }
 }

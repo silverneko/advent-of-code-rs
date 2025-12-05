@@ -84,7 +84,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_sample_small() {
@@ -106,8 +105,7 @@ mod tests {
 ###############
 "
         .trim();
-        let reader = Cursor::new(input);
-        let grid = parse_input(reader);
+        let grid = parse_input(input.as_bytes());
         assert_eq!(solve(&grid), (7036, 45));
     }
 
@@ -133,8 +131,7 @@ mod tests {
 #################
 "
         .trim();
-        let reader = Cursor::new(input);
-        let grid = parse_input(reader);
+        let grid = parse_input(input.as_bytes());
         assert_eq!(solve(&grid), (11048, 64));
     }
 }

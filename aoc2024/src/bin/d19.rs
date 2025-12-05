@@ -42,7 +42,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_sample() {
@@ -59,6 +58,6 @@ brgr
 bbrgwb
 "
         .trim();
-        assert_eq!(TestCase::parse(Cursor::new(input)).solve(), (6, 16));
+        assert_eq!(TestCase::parse(input.as_bytes()).solve(), (6, 16));
     }
 }

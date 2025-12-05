@@ -8,6 +8,7 @@ struct TestCase {
     c: (i64, i64),
 }
 
+#[allow(dead_code)]
 fn ext_gcd(
     (a1, b1, s1): (i64, i64, i64),
     (a2, b2, s2): (i64, i64, i64),
@@ -26,7 +27,9 @@ fn solve(data: TestCase) -> Option<(i64, i64)> {
     let TestCase { a: (x1, y1), b: (x2, y2), c: (x, y) } = data;
     let d = x2 * y1 - x1 * y2;
     assert_ne!(d, 0);
+    #[allow(non_snake_case)]
     let A = (y * x2 - x * y2) / d;
+    #[allow(non_snake_case)]
     let B = (x * y1 - y * x1) / d;
     if A >= 0 && B >= 0 && (A * x1 + B * x2) == x && (A * y1 + B * y2) == y {
         Some((A, B))

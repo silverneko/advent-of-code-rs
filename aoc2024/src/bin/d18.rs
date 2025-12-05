@@ -67,7 +67,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_sample() {
@@ -99,8 +98,7 @@ mod tests {
 2,0
 "
         .trim();
-        let reader = Cursor::new(input);
-        let data = TestCase::parse(reader, 7, 7);
+        let data = TestCase::parse(input.as_bytes(), 7, 7);
         assert_eq!(data.solve(12), Some(22));
         assert_eq!(data.part2(), Point(6, 1));
     }

@@ -44,7 +44,6 @@ impl Main {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_sample() {
@@ -61,14 +60,14 @@ R14
 L82
 "
         .trim();
-        let t = TestCase::parse(Cursor::new(input));
+        let t = TestCase::parse(input.as_bytes());
         assert_eq!(t.solve(), (3, 6));
     }
 
     #[test]
     fn test_large() {
         let input = r"R1000".trim();
-        let t = TestCase::parse(Cursor::new(input));
+        let t = TestCase::parse(input.as_bytes());
         assert_eq!(t.solve(), (0, 10));
     }
 
@@ -82,7 +81,7 @@ L10
 R10
 "
         .trim();
-        let t = TestCase::parse(Cursor::new(input));
+        let t = TestCase::parse(input.as_bytes());
         assert_eq!(t.solve(), (3, 3));
     }
 
@@ -96,7 +95,7 @@ R10
 L10
 "
         .trim();
-        let t = TestCase::parse(Cursor::new(input));
+        let t = TestCase::parse(input.as_bytes());
         assert_eq!(t.solve(), (3, 3));
     }
 }

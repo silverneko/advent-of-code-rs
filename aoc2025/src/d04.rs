@@ -54,7 +54,7 @@ impl Main {
 mod tests {
     use super::*;
 
-    const SAMPLE_INPUT: &str = r"
+    const SAMPLE_INPUT: &[u8] = br"
 ..@@.@@@@.
 @@@.@.@.@@
 @@@@@.@.@@
@@ -83,7 +83,7 @@ x.@@@.@@@@
 x.x.@@@.x.
 "
         .trim_ascii();
-        let t = TestCase::parse(SAMPLE_INPUT.as_bytes());
+        let t = TestCase::parse(SAMPLE_INPUT);
         let res = t.part1();
         assert_eq!(
             res,
@@ -107,7 +107,7 @@ x.x@@.@@@x
 x.x.@@@.x.
 "
         .trim_ascii();
-        let t = TestCase::parse(SAMPLE_INPUT.as_bytes());
+        let t = TestCase::parse(SAMPLE_INPUT);
         let res = t.part2();
         assert_eq!(
             res,

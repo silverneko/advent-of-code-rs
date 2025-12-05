@@ -58,9 +58,8 @@ impl Main {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
-    const SAMPLE_INPUT: &str = r"
+    const SAMPLE_INPUT: &[u8] = br"
 987654321111111
 811111111111119
 234234234234278
@@ -70,13 +69,13 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        let t = TestCase::parse(Cursor::new(SAMPLE_INPUT));
+        let t = TestCase::parse(SAMPLE_INPUT);
         assert_eq!(t.part1(), vec![98, 89, 78, 92]);
     }
 
     #[test]
     fn test_part2() {
-        let t = TestCase::parse(Cursor::new(SAMPLE_INPUT));
+        let t = TestCase::parse(SAMPLE_INPUT);
         assert_eq!(t.part2(), vec![987654321111, 811111111119, 434234234278, 888911112111]);
     }
 }
