@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
 
+pub mod grid;
+
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]
@@ -24,7 +26,7 @@ macro_rules! gen_main {
     }
 }
 
-gen_main! {D01::d01, D02::d02, D03::d03}
+gen_main! {D01::d01, D02::d02, D03::d03, D04::d04}
 
 #[test]
 fn verify_cli() {
