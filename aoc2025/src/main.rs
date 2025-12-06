@@ -33,6 +33,7 @@ solutions! {
     D03(d03::Main),
     D04(d04::Main),
     D05(d05::Main),
+    D06(d06::Main),
     Hello(hello::Main),
 }
 
