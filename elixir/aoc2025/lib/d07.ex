@@ -48,6 +48,6 @@ defmodule Aoc2025.D07 do
 
   def run(input_path \\ "input/d07.txt") do
     input = File.read!(input_path)
-    solve(input) |> Tuple.delete_at(0)
+    solve(input) |> Tuple.delete_at(0) |> IO.inspect()
   end
 end
