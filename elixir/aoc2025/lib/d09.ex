@@ -43,16 +43,14 @@ defmodule Aoc2025.D09 do
     {v_to_i, i_to_v}
   end
 
-  def flood_fill(graph, s) do
+  def flood_fill(graph, {x, y} = s) do
     case graph do
       %{^s => :uninit} ->
         graph = %{graph | s => :empty}
-        {x, y} = s
 
-        for {dx, dy} <- [{0, 1}, {0, -1}, {1, 0}, {-1, 0}] do
-          {x + dx, y + dy}
+        for {dx, dy} <- [{0, 1}, {0, -1}, {1, 0}, {-1, 0}], reduce: graph do
+          graph -> flood_fill(graph, {x + dx, y + dy})
         end
-        |> Enum.reduce(graph, &flood_fill(&2, &1))
 
       _ ->
         graph
