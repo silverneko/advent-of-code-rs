@@ -22,18 +22,15 @@ defmodule Aoc2025.D09 do
   def area({p1, p2}), do: area(p1, p2)
 
   @doc ~S"""
-  iex> Aoc2025.D09.discretize([5, 10, 100])
+  iex> Aoc2025.D09.discretize([5, 10, 10, 100])
   {
-    %{4 => 0, 5 => 1, 10 => 2, 100 => 3, 101 => 4},
-    %{0 => 4, 1 => 5, 2 => 10, 3 => 100, 4 => 101}
+    %{5 => 0, 10 => 1, 100 => 2},
+    %{0 => 5, 1 => 10, 2 => 100}
   }
   """
   def discretize(enumerable) do
-    {min, max} = Enum.min_max(enumerable)
-
     v_to_i =
       enumerable
-      |> Stream.concat([min - 1, max + 1])
       |> Enum.sort()
       |> Stream.dedup()
       |> Stream.zip(Stream.from_index())
@@ -57,7 +54,11 @@ defmodule Aoc2025.D09 do
     end
   end
 
-  def make_graph(points, max_x, max_y) do
+  def make_graph(points) do
+    {x_s, y_s} = Enum.unzip(points)
+    max_x = Enum.max(x_s)
+    max_y = Enum.max(y_s)
+
     edges =
       Stream.zip(points, Stream.cycle(points) |> Stream.drop(1))
       |> Stream.flat_map(fn {{x1, y1}, {x2, y2}} ->
@@ -74,7 +75,7 @@ defmodule Aoc2025.D09 do
       |> Map.new(fn k -> {k, :tile} end)
 
     graph =
-      for(x <- 0..max_x, y <- 0..max_y, into: %{}, do: {{x, y}, :uninit})
+      for(x <- -1..(max_x + 1), y <- -1..(max_y + 1), into: %{}, do: {{x, y}, :uninit})
       |> Map.merge(edges)
       |> flood_fill({0, 0})
 
@@ -96,7 +97,7 @@ defmodule Aoc2025.D09 do
 
     dpoints = Enum.map(points, fn {x, y} -> {x_to_i[x], y_to_i[y]} end)
 
-    graph = make_graph(dpoints, map_size(i_to_x), map_size(i_to_y))
+    graph = make_graph(dpoints)
 
     res2 =
       combinations(dpoints)
