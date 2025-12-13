@@ -35,6 +35,7 @@ solutions! {
     D05(d05::Main),
     D06(d06::Main),
     D10(d10::Main),
+    D11(d11::Main),
     Hello(hello::Main),
 }
 
