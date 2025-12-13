@@ -34,6 +34,7 @@ solutions! {
     D04(d04::Main),
     D05(d05::Main),
     D06(d06::Main),
+    D10(d10::Main),
     Hello(hello::Main),
 }
 
