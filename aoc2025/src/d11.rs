@@ -63,8 +63,7 @@ impl TestCase {
 impl Main {
     pub fn run(&self) {
         let t = TestCase::parse(stdin().lock());
-        dbg!(t.part1());
-        dbg!(t.part2());
+        dbg!(t.part1(), t.part2());
     }
 }
 

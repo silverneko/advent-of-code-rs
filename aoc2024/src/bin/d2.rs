@@ -11,7 +11,8 @@ fn is_increasing_decreasing(v: &[i32]) -> bool {
 }
 
 fn main() {
-    let mut total = 0;
+    let mut ans1 = 0;
+    let mut ans2 = 0;
     for line in io::stdin().lines() {
         let line = line.unwrap();
         let v: Vec<i32> = line
@@ -21,18 +22,19 @@ fn main() {
             .unwrap();
 
         if is_increasing_decreasing(&v) {
-            total += 1;
+            ans1 += 1;
+            ans2 += 1;
         } else {
             for i in 0..v.len() {
                 let mut vv = Vec::with_capacity(v.len() - 1);
                 vv.extend_from_slice(&v[0..i]);
                 vv.extend_from_slice(&v[i + 1..]);
                 if is_increasing_decreasing(&vv) {
-                    total += 1;
+                    ans2+=1;
                     break;
                 }
             }
         }
     }
-    println!("{total}");
+    dbg!(ans1, ans2);
 }
