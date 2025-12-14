@@ -1,5 +1,6 @@
 use clap::Args;
 use itertools::Itertools;
+use std::collections::HashMap;
 use std::convert::Infallible;
 use std::io::{BufRead, stdin};
 use std::str::FromStr;
@@ -44,44 +45,47 @@ impl FromStr for MachineConfig {
 }
 
 impl MachineConfig {
-    fn find_solutions(&self, state: u32) -> impl Iterator<Item = Vec<usize>> {
-        // NOTE: Assuming Itertools::powerset() generates sequence from small to large set size.
-        (0..self.buttons.len()).powerset().filter(move |seq| {
-            seq.iter().copied().fold(0, |acc, idx| acc ^ self.buttons[idx]) == state
+    /// Generates all possible button combinations, grouped by the end state that it produces.
+    fn generate_states(&self) -> HashMap<u32, Vec<Vec<u32>>> {
+        self.buttons.iter().copied().powerset().fold(HashMap::new(), |mut hash_map, seq| {
+            let state = seq.iter().copied().fold(0, |acc, b| acc ^ b);
+            if let Some(v) = hash_map.get_mut(&state) {
+                v.push(seq);
+                v.sort_by(|a, b| a.len().cmp(&b.len()));
+            } else {
+                hash_map.insert(state, vec![seq]);
+            }
+            hash_map
         })
     }
+}
 
-    fn find_joltage_solution(&self, jolt: &[i32]) -> Option<usize> {
-        if jolt.iter().all(|&e| e == 0) {
-            return Some(0);
-        }
-        let state = jolt
-            .iter()
-            .copied()
-            .enumerate()
-            .fold(0, |acc, (idx, j)| if j & 1 == 1 { acc | 1 << idx } else { acc });
-        self.find_solutions(state)
-            .filter_map(|seq| {
-                let mut jolt = jolt.to_owned();
-                for (i, j) in jolt.iter_mut().enumerate() {
-                    for b in seq.iter().map(|&s| self.buttons[s]) {
-                        if b & (1 << i) != 0 {
-                            *j -= 1;
-                        }
-                    }
-                    assert!(*j & 1 == 0);
-                    *j /= 2;
-                }
-                if jolt.iter().all(|&j| j >= 0)
-                    && let Some(jj) = self.find_joltage_solution(&jolt)
-                {
-                    Some(seq.len() + 2 * jj)
-                } else {
-                    None
-                }
-            })
-            .min()
+fn solve_joltage(state_map: &HashMap<u32, Vec<Vec<u32>>>, jolt: &[i32]) -> Option<usize> {
+    if jolt.iter().all(|&e| e == 0) {
+        return Some(0);
     }
+    let state = jolt
+        .iter()
+        .copied()
+        .enumerate()
+        .fold(0, |acc, (idx, j)| if j & 1 == 1 { acc | 1 << idx } else { acc });
+    state_map
+        .get(&state)?
+        .iter()
+        .filter_map(|seq| {
+            let mut jolt = jolt.to_owned();
+            for idx in 0..jolt.len() {
+                jolt[idx] -= seq.iter().copied().filter(|b| b & (1 << idx) != 0).count() as i32;
+                assert!(jolt[idx] & 1 == 0);
+                jolt[idx] /= 2;
+            }
+            if jolt.iter().all(|&j| j >= 0) {
+                Some(seq.len() + 2 * solve_joltage(state_map, &jolt)?)
+            } else {
+                None
+            }
+        })
+        .min()
 }
 
 #[derive(Debug)]
@@ -92,12 +96,12 @@ impl TestCase {
         Self(reader.lines().map(|l| l.unwrap().parse().unwrap()).collect())
     }
 
-    fn part1(&self) -> Vec<Vec<usize>> {
-        self.0.iter().map(|v| v.find_solutions(v.state).next().unwrap()).collect()
+    fn part1(&self) -> Vec<Vec<u32>> {
+        self.0.iter().map(|v| v.generate_states()[&v.state].first().unwrap().clone()).collect()
     }
 
     fn part2(&self) -> Vec<usize> {
-        self.0.iter().map(|v| v.find_joltage_solution(&v.joltage).unwrap()).collect()
+        self.0.iter().map(|v| solve_joltage(&v.generate_states(), &v.joltage).unwrap()).collect()
     }
 }
 
@@ -123,7 +127,10 @@ mod tests {
     #[test]
     fn test_part1() {
         let t = TestCase::parse(SAMPLE_INPUT);
-        assert_eq!(t.part1(), vec![vec![1, 3], vec![2, 3, 4], vec![1, 2]]);
+        assert_eq!(
+            t.part1(),
+            vec![vec![0b1010, 0b1100], vec![0b10001, 0b111, 0b11110], vec![0b11001, 0b110111]]
+        );
     }
 
     #[test]
