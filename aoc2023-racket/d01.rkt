@@ -32,9 +32,9 @@
     (calc (first digits) (last digits))))
 
 (module+ main
-  (define input-lines (file->lines (vector-ref (current-command-line-arguments) 0)))
-  (displayln (for/sum ([line input-lines]) (part1 line)))
-  (displayln (for/sum ([line input-lines]) (part2 line))))
+  (define input-lines (port->lines))
+  (displayln (apply + (map part1 input-lines)))
+  (displayln (apply + (map part2 input-lines))))
 
 (module+ test
   (require rackunit)
@@ -64,14 +64,10 @@ END
                  ))
 
   (test-case "test part1"
-    (check-equal? (for/list ([line sample-input1])
-                    (part1 line))
-                  '(12 38 15 77)))
+    (check-equal? (map part1 sample-input1) '(12 38 15 77)))
 
   (test-case "test part2"
-    (check-equal? (for/list ([line sample-input2])
-                    (part2 line))
-                  '(29 83 13 24 42 14 76)))
+    (check-equal? (map part2 sample-input2) '(29 83 13 24 42 14 76)))
 
   (test-case "test part2 edge case 81"
     (check-equal? (part2 "eightwo1") 81))
