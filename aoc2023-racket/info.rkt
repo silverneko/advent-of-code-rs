@@ -7,3 +7,4 @@
 (define version "0.0")
 (define pkg-authors '(yo))
 (define license '(Apache-2.0 OR MIT))
+(define test-omit-paths '("info.rkt"))
