@@ -5,35 +5,35 @@
 (require megaparsack
          megaparsack/text)
 
-(define space*/p (many/p space/p))
-(define space+/p (many+/p space/p))
-
 (struct game-round (red blue green) #:prefab)
 
-(define game-round/p
-  (do [s
-       <-
-       (many+/p #:sep (char/p #\,)
-                (do space*/p
-                    [t <- integer/p]
-                    space+/p
-                    [c <- (many+/p letter/p)]
-                    (pure (cons (list->string c) t))))]
-      (let* ([h (make-hash s)]
-             [red (hash-ref h "red" 0)]
-             [blue (hash-ref h "blue" 0)]
-             [green (hash-ref h "green" 0)])
-        (pure (game-round red blue green)))))
-
-(define input-line/p
-  (do (string/p "Game")
-      space+/p
-      [n <- integer/p]
-      (char/p #\:)
-      [rounds <- (many/p game-round/p #:sep (char/p #\;))]
-      (pure (cons n rounds))))
-
 (define (parse-input-line line)
+  (define space*/p (many/p space/p))
+  (define space+/p (many+/p space/p))
+
+  (define game-round/p
+    (do [s
+         <-
+         (many+/p #:sep (char/p #\,)
+                  (do space*/p
+                      [t <- integer/p]
+                      space+/p
+                      [c <- (many+/p letter/p)]
+                      (pure (cons (list->string c) t))))]
+        (define (lookup k)
+          (let ([p (assoc k s)]) (or (and p (cdr p)) 0)))
+        (let* ([red (lookup "red")]
+               [blue (lookup "blue")]
+               [green (lookup "green")])
+          (pure (game-round red blue green)))))
+
+  (define input-line/p
+    (do (string/p "Game")
+        space+/p
+        [n <- integer/p]
+        (char/p #\:)
+        [rounds <- (many/p game-round/p #:sep (char/p #\;))]
+        (pure (cons n rounds))))
   (parse-result! (parse-string input-line/p line)))
 
 (define (fold-game-rounds rounds)
