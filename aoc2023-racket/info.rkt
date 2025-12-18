@@ -1,6 +1,6 @@
 #lang info
 (define collection "aoc2023")
-(define deps '("base"))
+(define deps '("base" "functional-lib" "megaparsack-lib"))
 (define build-deps '("scribble-lib" "racket-doc" "rackunit-lib"))
 ;; (define scribblings '(("scribblings/aoc2023.scrbl" ())))
 (define pkg-desc "Description Here")
